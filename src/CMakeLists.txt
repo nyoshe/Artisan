@@ -8,11 +8,10 @@ add_executable (Artisan "Artisan.cpp" "Artisan.h"
     "BitBoard.h"
     "Memory.h"
     "Engine.h" "Engine.cpp"
-    "glfw3.h"
-    "Move.h"
-    "Move.cpp"
+    
+    "Move.h" "Move.cpp"
     "MoveGen.h" "MoveGen.cpp"
-    "robin_hood.h"
+    
     "pgn.h"
     "UCI.h"
 )
