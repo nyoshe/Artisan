@@ -336,8 +336,6 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 		int score = 0;
 		bool can_reduce =
 			moves_searched >= 3 &&
-			!move.captured() &&
-			!move.promotion() &&
 			!in_check &&
 			!is_pv &&
 			depth_left >= 3;
@@ -358,7 +356,17 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 		}
 
 		if (can_reduce) {
-			int R = int(0.5 + std::log(depth_left) * std::log(moves_searched) / 3.0);
+			int R = 0;
+			/*
+			if (move.captured() || move.promotion()) {
+				R = int(0.38 + std::log(depth_left) * std::log(moves_searched) / 3.76);
+			} else {
+				R = int(2.01 + std::log(depth_left) * std::log(moves_searched) / 2.32);
+			}
+			*/
+			if (!move.captured() && !move.promotion()) {
+				R = int(0.5 + std::log(depth_left) * std::log(moves_searched) / 3.0);
+			}
 			score = -alphaBeta(-alpha - 1, -alpha, depth_left - 1 - R, false);
 		}
 

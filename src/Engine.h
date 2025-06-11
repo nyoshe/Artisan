@@ -163,9 +163,8 @@ public:
 					return out;
 				}
 			}
+			stage = MoveStage::captures;
 		}
-
-		stage = MoveStage::captures;
 
 		if (stage == MoveStage::captures && moves.end() != std::find_if(moves.begin(), moves.end(), [](const auto& m) {return m.captured();})) {
 			auto mvv_lva = [](const auto& a, const auto& b) {
@@ -176,23 +175,23 @@ public:
 			*pos_best = moves.back();
 			moves.pop_back();
 			return out;
+		} else if (stage == MoveStage::captures) {
+			stage = MoveStage::history;
 		}
-
-		stage = MoveStage::history;
-
+		
 		if (stage == MoveStage::killer && (b.ply - e.start_ply > 2)) {
 			Move killer = e.killer_moves[b.ply - e.start_ply - 2][killer_slot++];
 			auto pos_best = std::find(moves.begin(), moves.end(), killer);
 			if (killer && pos_best != moves.end()) {
-				stage = MoveStage::history;
 				out = *pos_best;
 				*pos_best = moves.back();
 				moves.pop_back();
 				return out;
 			}
 			stage = MoveStage::history;
+		} else if (stage == MoveStage::killer) {
+			stage = MoveStage::history;
 		}
-		stage = MoveStage::history;
 		
 		if (stage == MoveStage::history) {
 			int max = -100000;
