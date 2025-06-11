@@ -12,4 +12,4 @@ endif()
 project ("Artisan")
 
 # Include sub-projects.
-add_subdirectory ("Artisan")
+add_subdirectory ("src")
