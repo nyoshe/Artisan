@@ -3,7 +3,19 @@
 #
 
 # Add source to this project's executable.
-add_executable (Artisan "Artisan.cpp" "Artisan.h")
+add_executable (Artisan "Artisan.cpp" "Artisan.h"
+    "Board.h" "Board.cpp"
+    "BitBoard.h"
+    "Memory.h"
+    "Engine.h" "Engine.cpp"
+    "glfw3.h"
+    "Move.h"
+    "Move.cpp"
+    "MoveGen.h" "MoveGen.cpp"
+    "robin_hood.h"
+    "pgn.h"
+    "UCI.h"
+)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET Artisan PROPERTY CXX_STANDARD 20)

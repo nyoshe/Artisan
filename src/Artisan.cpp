@@ -2,11 +2,14 @@
 //
 
 #include "Artisan.h"
-
+#include "UCI.h"
 using namespace std;
 
 int main()
 {
-	cout << "Hello CMake." << endl;
+	BB::init();
+	while (true) {
+		UCI::getInstance()->loop();
+	}
 	return 0;
 }
