@@ -16,7 +16,7 @@ enum class TType : u8 {
 };
 
 struct TTEntry {
-	u64 hash;
+	u32 hash;
 	int eval = 0;
 	u8 depth_left = 0;
 	u16 ply = 0;
@@ -28,6 +28,7 @@ struct TTEntry {
 		return type != TType::INVALID;
 	}
 };
+
 
 struct TimeControl {
 	int wtime = 0;
@@ -49,7 +50,7 @@ private:
 
 
 	std::array<int, MAX_PLY> pv_length;
-	std::array<std::array<Move, 10>, MAX_PLY> killer_moves;
+
 	std::vector<TTEntry> tt;
 
 
@@ -74,11 +75,11 @@ private:
 	int alphaBeta(int alpha, int beta, int depth_left, bool is_pv);
 	int quiesce(int alpha, int beta, bool is_pv);
 public:
-
 	std::array<std::array<std::array<int, 64>, 64>, 2> history_table;
 	int hash_hits = 0;
 	std::array<StaticVector<int>, 64> eval_vec;
 	std::array<StaticVector<Move>, 64> seen_quiets;
+	std::array<std::array<Move, 2>, MAX_PLY> killer_moves;
 	int start_ply = 0;
 	Board b;
 	TimeControl tc;
@@ -111,7 +112,11 @@ public:
 
 	TTEntry probeTT(u64 hash_key) const {
 		u64 index = __mulh(hash_key & 0x7FFFFFFFFFFFFFFF, hash_size);
-		return tt[index];
+		if (tt[index].hash == (hash_key  >> 32)) {
+			return tt[index];
+		} else {
+			return TTEntry();
+		}
 	}
 
 	bool checkTime();
@@ -119,18 +124,20 @@ public:
 
 	void updatePV(int depth, Move move);
 
-
 };
 
 enum class MoveStage {
 	ttMove,
 	captures,
 	history,
+	killer,
 	evals
 };
+
 class MoveGen {
 private:
 	MoveStage stage = MoveStage::ttMove;
+	int killer_slot = 0;
 	bool init = false;
 public:
 
@@ -142,24 +149,23 @@ public:
 		}
 		Move out;
 
-		TTEntry entry = e.probeTT(e.b.getHash());
-
 		if (stage == MoveStage::ttMove) {
-			
-			auto pos_best = std::find(moves.begin(), moves.end(), entry.best_move);
-			if (pos_best != moves.end()) {
-				out = *pos_best;
-				e.hash_hits++;
-				*pos_best = moves.back();
-				moves.pop_back();
+			TTEntry entry = e.probeTT(e.b.getHash());
+			if (entry) {
+				auto pos_best = std::find(moves.begin(), moves.end(), entry.best_move);
+				if (pos_best != moves.end()) {
+					out = *pos_best;
+					e.hash_hits++;
+					*pos_best = moves.back();
+					moves.pop_back();
 
-				stage = MoveStage::captures;
-				return out;
-			} else {
-				stage = MoveStage::captures;
+					stage = MoveStage::captures;
+					return out;
+				}
 			}
 		}
-		
+
+		stage = MoveStage::captures;
 
 		if (stage == MoveStage::captures && moves.end() != std::find_if(moves.begin(), moves.end(), [](const auto& m) {return m.captured();})) {
 			auto mvv_lva = [](const auto& a, const auto& b) {
@@ -170,10 +176,24 @@ public:
 			*pos_best = moves.back();
 			moves.pop_back();
 			return out;
-		} else if (stage == MoveStage::captures) {
-			stage = MoveStage::history;
 		}
 
+		stage = MoveStage::history;
+
+		if (stage == MoveStage::killer && (b.ply - e.start_ply > 2)) {
+			Move killer = e.killer_moves[b.ply - e.start_ply - 2][killer_slot++];
+			auto pos_best = std::find(moves.begin(), moves.end(), killer);
+			if (killer && pos_best != moves.end()) {
+				stage = MoveStage::history;
+				out = *pos_best;
+				*pos_best = moves.back();
+				moves.pop_back();
+				return out;
+			}
+			stage = MoveStage::history;
+		}
+		stage = MoveStage::history;
+		
 		if (stage == MoveStage::history) {
 			int max = -100000;
 			int index = 0;
