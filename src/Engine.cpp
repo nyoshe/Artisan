@@ -66,12 +66,12 @@ Move Engine::search(int depth) {
 	}
 
 	max_depth = 1;
-	int score = -100000;
+	int score = alphaBeta(-100000, 100000, max_depth, true);
 
-	for (max_depth = 1; max_depth < 20; max_depth++) {
+	for (max_depth = 1; max_depth < MAX_PLY; max_depth++) {
 		// Keep searching until we get a score within our window
 		pv_length[0] = 0;
-		int delta = 50;
+		int delta = 9 + score * score / 16384;
 		int alpha = score - delta;
 		int beta = score + delta;
 
@@ -105,6 +105,7 @@ Move Engine::search(int depth) {
 
 
 int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
+	if (checkTime()) return b.getEval();
 	nodes++;
 	const int search_ply = b.ply - start_ply;
 	pv_length[search_ply] = 0;
@@ -117,36 +118,38 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 
 	bool futility_prune = false;
 
-	if (!is_pv) {
-		u64 hash_key = b.getHash();
-		TTEntry entry = probeTT(hash_key);
+	TTEntry tt_entry = probeTT(b.getHash());
 
-		if (entry && entry.depth_left >= depth_left) {
-			if (entry.type == TType::EXACT) return entry.eval;
-			if (entry.type == TType::BETA_CUT && entry.eval >= beta) return entry.eval;
-			if (entry.type == TType::FAIL_LOW && entry.eval <= alpha) return entry.eval;
+	int eval;
+	//pruning
+	if (!is_pv && !in_check) {
+
+		if (tt_entry && tt_entry.depth_left >= depth_left) {
+			if (tt_entry.type == TType::EXACT) return tt_entry.eval;
+			if (tt_entry.type == TType::BETA_CUT && tt_entry.eval >= beta) return tt_entry.eval;
+			if (tt_entry.type == TType::FAIL_LOW && tt_entry.eval <= alpha) return tt_entry.eval;
 		}
 
-		i16 eval = b.getEval();
+		eval = b.getEval();
 
 		//null move pruning
-		if (depth_left >= 3 && !in_check && (eval + 50) > beta) {
+		if (depth_left >= 3 && (eval) > beta) {
 			b.doMove(Move(0, 0));
-			const int R = 4;
+			const int R = 4 + depth_left / 4 + std::min(3, (eval - beta) / 200);
 			int null_score = -alphaBeta(-beta, -beta + 1, depth_left - R, false);
 			b.undoMove();
-			if (null_score >= beta) return null_score;
+			//don't return wins
+			if (null_score >= beta && null_score < 30000 && null_score > -30000) return null_score;
 		}
 
 		//reverse futility pruning
-		if (!in_check && depth_left <= 6 && eval >= beta + 80 * depth_left) {
+		if (depth_left <= 6 && eval >= beta + 80 * depth_left) {
 			return eval;
 		}
 
 		// Futility margins increasing by depth
 		static constexpr int futility_margins[4] = { 0, 100, 300, 500 };
-
-		if (!in_check && depth_left <= 3) {
+		if (depth_left <= 3) {
 			int futility_margin = eval + futility_margins[depth_left];
 			futility_prune = (futility_margin <= alpha);
 		}
@@ -200,6 +203,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 
 		if (can_reduce) {
 			int R = static_cast<int>(2.0 + std::log(depth_left) * std::log(moves_searched) / 3.0);
+			//	- history_table[b.us][move.from()][move.to()] / 9164;
 			/*
 			if (move.captured() || move.promotion()) {
 				R = int(0.38 + std::log(depth_left) * std::log(moves_searched) / 3.76);
@@ -208,16 +212,18 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 			}
 			*/
 			score = -alphaBeta(-alpha - 1, -alpha, depth_left - R, false);
+			if (score > alpha) {
+				//research full depth if we fail high
+				score = -alphaBeta(-alpha - 1, -alpha, depth_left - 1, false);
+			}
 		}
 
-		else if (moves_searched == 0) {
-			score = -alphaBeta(-beta, -alpha, depth_left - 1, is_pv);
-		}
-		else {
+		else if (!is_pv || moves_searched > 0) {
 			score = -alphaBeta(-alpha - 1, -alpha, depth_left - 1, false);
-			if (alpha < score && score < beta) {
-				score = -alphaBeta(-beta, -alpha, depth_left - 1, true);
-			}
+		}
+		if (is_pv && (moves_searched == 0 || score > alpha)) {
+			score = -alphaBeta(-beta, -alpha, depth_left - 1, true);
+
 		}
 
 		b.undoMove();
@@ -257,8 +263,8 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 				}
 			}
 
-			storeTTEntry(b.getHash(), score, TType::BETA_CUT, depth_left, best_move);
-			return score;
+			storeTTEntry(b.getHash(), best, TType::BETA_CUT, depth_left, best_move);
+			return best;
 		}
 		if (!move.captured()) {
 			seen_quiets[search_ply].emplace_back(move);

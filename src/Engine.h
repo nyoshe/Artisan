@@ -134,10 +134,11 @@ public:
 			return Move(0, 0);
 		}
 		Move out;
-
+		TTEntry entry;
 		switch (stage) {
 		case MoveStage::ttMove:
-			if (TTEntry entry = e.probeTT(e.b.getHash())) {
+			entry = e.probeTT(e.b.getHash());
+			if (entry && entry.type != TType::FAIL_LOW) {
 				auto pos_best = std::find(moves.begin(), moves.end(), entry.best_move);
 				if (pos_best != moves.end()) {
 					out = *pos_best;
