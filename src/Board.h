@@ -145,6 +145,18 @@ public:
 	    return us == eWhite ? eval : -eval;
     };
 
+    int getPhase() const {
+        return 24 -
+            BB::popcnt(boards[eWhite][eKnight]) -
+            BB::popcnt(boards[eWhite][eBishop]) -
+            BB::popcnt(boards[eWhite][eRook]) * 2 -
+            BB::popcnt(boards[eWhite][eQueen]) * 4 -
+            BB::popcnt(boards[eBlack][eKnight]) -
+            BB::popcnt(boards[eBlack][eBishop]) -
+            BB::popcnt(boards[eBlack][eRook]) * 2 -
+            BB::popcnt(boards[eBlack][eQueen]) * 4
+            ;
+    }
 
     void runSanityChecks() const;
     void printMoves() const;

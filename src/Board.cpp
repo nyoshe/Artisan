@@ -1211,16 +1211,7 @@ int Board::evalUpdate() const {
 	//tempo
 	out += 18;
 
-	int16_t game_phase = 24 -
-			BB::popcnt(boards[eWhite][eKnight]) -
-			BB::popcnt(boards[eWhite][eBishop]) -
-			BB::popcnt(boards[eWhite][eRook]) * 2 -
-			BB::popcnt(boards[eWhite][eQueen]) * 4 -
-			BB::popcnt(boards[eBlack][eKnight]) -
-			BB::popcnt(boards[eBlack][eBishop]) -
-			BB::popcnt(boards[eBlack][eRook]) * 2 -
-			BB::popcnt(boards[eBlack][eQueen]) * 4
-		;
+	int16_t game_phase = getPhase();
 
 	int mg_val = 0;
 	int eg_val = 0;

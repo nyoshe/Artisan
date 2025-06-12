@@ -132,8 +132,8 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 
 		eval = b.getEval();
 
-		//null move pruning
-		if (depth_left >= 3 && (eval) > beta) {
+		//null move pruning, do not NMP in late game
+		if (depth_left >= 3 && (eval) > beta && b.getPhase() <= 16) {
 			b.doMove(Move(0, 0));
 			const int R = 4 + depth_left / 4 + std::min(3, (eval - beta) / 200);
 			int null_score = -alphaBeta(-beta, -beta + 1, depth_left - R, false);
@@ -177,6 +177,9 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 	while (const Move move = move_gen.getNext(*this, b, move_vec[search_ply])) {
 		if (checkTime()) return best;
 		int score = 0;
+		if (!move.captured()) {
+			seen_quiets[search_ply].emplace_back(move);
+		}
 
 		b.doMove(move);
 		//futility pruning
@@ -196,7 +199,6 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 			!is_pv &&
 			!in_check) {
 			b.undoMove();
-
 			moves_searched++;
 			continue;
 		}
@@ -266,9 +268,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 			storeTTEntry(b.getHash(), best, TType::BETA_CUT, depth_left, best_move);
 			return best;
 		}
-		if (!move.captured()) {
-			seen_quiets[search_ply].emplace_back(move);
-		}
+		
 	}
 	if (raised_alpha) {
 		storeTTEntry(b.getHash(), best, TType::EXACT, depth_left, best_move);
