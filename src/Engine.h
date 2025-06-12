@@ -38,10 +38,7 @@ struct TimeControl {
 	int movetime = 0;
 };
 
-class Engine
-{
-private:
-
+class Engine {
 	int hash_miss;
 	//Move best_move;
 	static constexpr int MAX_PLY = 64;
@@ -65,6 +62,7 @@ private:
 	void perftSearch(int depth);
 	int alphaBeta(int alpha, int beta, int depth_left, bool is_pv);
 	int quiesce(int alpha, int beta, bool is_pv);
+
 public:
 	std::array<std::array<std::array<int, 64>, 64>, 2> history_table;
 	int hash_hits = 0;
@@ -74,6 +72,7 @@ public:
 	int start_ply = 0;
 	Board b;
 	TimeControl tc;
+
 	Engine() {
 		tt.resize(hash_size);
 		for (auto& i : history_table) {
@@ -84,6 +83,7 @@ public:
 			}
 		}
 	}
+
 	std::array<StaticVector<Move>, 64> move_vec;
 
 
@@ -103,35 +103,31 @@ public:
 
 	TTEntry probeTT(u64 hash_key) const {
 		u64 index = __mulh(hash_key & 0x7FFFFFFFFFFFFFFF, hash_size);
-		if (tt[index].hash == (hash_key  >> 32)) {
+		if (tt[index].hash == (hash_key >> 32)) {
 			return tt[index];
-		} else {
-			return TTEntry();
 		}
+		return TTEntry();
 	}
 
 	bool checkTime();
 	void calcTime();
 
 	void updatePV(int depth, Move move);
-
 };
 
 enum class MoveStage {
 	ttMove,
 	captures,
-	history,
 	killer,
-	evals
+	history
 };
 
 class MoveGen {
-private:
 	MoveStage stage = MoveStage::ttMove;
 	int killer_slot = 0;
 	bool init = false;
-public:
 
+public:
 	Move getNext(Engine& e, Board& b, StaticVector<Move>& moves) {
 		assert(init == (stage == MoveStage::evals));
 
@@ -140,9 +136,9 @@ public:
 		}
 		Move out;
 
-		if (stage == MoveStage::ttMove) {
-			TTEntry entry = e.probeTT(e.b.getHash());
-			if (entry) {
+		switch (stage) {
+		case MoveStage::ttMove:
+			if (TTEntry entry = e.probeTT(e.b.getHash())) {
 				auto pos_best = std::find(moves.begin(), moves.end(), entry.best_move);
 				if (pos_best != moves.end()) {
 					out = *pos_best;
@@ -155,36 +151,38 @@ public:
 				}
 			}
 			stage = MoveStage::captures;
-		}
-
-		if (stage == MoveStage::captures && moves.end() != std::find_if(moves.begin(), moves.end(), [](const auto& m) {return m.captured();})) {
-			auto mvv_lva = [](const auto& a, const auto& b) {
-				return piece_vals[a.captured()] * 10 - piece_vals[a.piece()] < piece_vals[b.captured()] * 10 - piece_vals[b.piece()];
-				};
-			auto pos_best = std::ranges::max_element(moves.begin(), moves.end(), mvv_lva);
-			out = *pos_best;
-			*pos_best = moves.back();
-			moves.pop_back();
-			return out;
-		} else if (stage == MoveStage::captures) {
-			stage = MoveStage::killer;
-		}
-		
-		if (stage == MoveStage::killer && (b.ply - e.start_ply > 2) && killer_slot < 2) {
-			Move killer = e.killer_moves[b.ply - e.start_ply - 2][killer_slot++];
-			auto pos_best = std::find(moves.begin(), moves.end(), killer);
-			if (killer && pos_best != moves.end()) {
+			[[fallthrough]];
+		case MoveStage::captures:
+			if (moves.end() != std::find_if(moves.begin(), moves.end(),
+				[](const auto& m) { return m.captured(); })) {
+				auto mvv_lva = [](const auto& a, const auto& b) {
+					return piece_vals[a.captured()] * 10 - piece_vals[a.piece()] < piece_vals[b.captured()] * 10 -
+						piece_vals[b.piece()];
+					};
+				auto pos_best = std::ranges::max_element(moves.begin(), moves.end(), mvv_lva);
 				out = *pos_best;
 				*pos_best = moves.back();
 				moves.pop_back();
 				return out;
 			}
+
+			stage = MoveStage::killer;
+			[[fallthrough]];
+		case MoveStage::killer:
+			if ((b.ply - e.start_ply > 2) && killer_slot < 2) {
+				Move killer = e.killer_moves[b.ply - e.start_ply - 2][killer_slot++];
+				auto pos_best = std::find(moves.begin(), moves.end(), killer);
+				if (killer && pos_best != moves.end()) {
+					out = *pos_best;
+					*pos_best = moves.back();
+					moves.pop_back();
+					return out;
+				}
+			}
+
 			stage = MoveStage::history;
-		} else if (stage == MoveStage::killer) {
-			stage = MoveStage::history;
-		}
-		
-		if (stage == MoveStage::history) {
+			[[fallthrough]];
+		case MoveStage::history:
 			int max = -100000;
 			int index = 0;
 
@@ -199,7 +197,9 @@ public:
 			moves[index] = moves.back();
 			moves.pop_back();
 			return out;
+			break;
 		}
+
 		return Move();
 	}
 };
