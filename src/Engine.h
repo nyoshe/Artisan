@@ -47,22 +47,13 @@ private:
 	static constexpr int MAX_PLY = 64;
 	static constexpr u64 hash_size = 32e6 / sizeof(TTEntry);
 	std::array<std::array<Move, MAX_PLY>, MAX_PLY> pv_table;
-
-
 	std::array<int, MAX_PLY> pv_length;
-
 	std::vector<TTEntry> tt;
 
-
 	// Engine state variables
-	
 	u16 max_depth = 0;
 	int nodes = 0;
-	int current_age = 0;
 	Move root_best;
-
-	float search_calls = 0;
-	float moves_inspected = 0;
 
 	// Timer variables
 	std::clock_t start_time = 0;
@@ -176,10 +167,10 @@ public:
 			moves.pop_back();
 			return out;
 		} else if (stage == MoveStage::captures) {
-			stage = MoveStage::history;
+			stage = MoveStage::killer;
 		}
 		
-		if (stage == MoveStage::killer && (b.ply - e.start_ply > 2)) {
+		if (stage == MoveStage::killer && (b.ply - e.start_ply > 2) && killer_slot < 2) {
 			Move killer = e.killer_moves[b.ply - e.start_ply - 2][killer_slot++];
 			auto pos_best = std::find(moves.begin(), moves.end(), killer);
 			if (killer && pos_best != moves.end()) {
