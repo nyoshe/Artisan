@@ -129,7 +129,6 @@ class MoveGen {
 
 public:
 	Move getNext(Engine& e, Board& b, StaticVector<Move>& moves) {
-		assert(init == (stage == MoveStage::evals));
 
 		if (moves.empty()) {
 			return Move(0, 0);
