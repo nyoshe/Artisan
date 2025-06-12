@@ -144,43 +144,52 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 	nodes++;
 	const int search_ply = b.ply - start_ply;
 	pv_length[search_ply] = 0;
-
-	if (b.is3fold() || b.half_move == 100) return 0;
-	bool in_check = b.isCheck();
-	if (depth_left == 0 && in_check) { depth_left++; }
 	if (depth_left <= 0) return quiesce(alpha, beta, is_pv);
 
-	u64 hash_key = b.getHash();
-	TTEntry entry = probeTT(hash_key);
+	bool in_check = b.isCheck();
+	if (b.is3fold() || b.half_move >= 100) return 0;
+	if (depth_left == 0 && in_check) { depth_left++; }
+	if (search_ply >= MAX_PLY - 1) return b.getEval();
 
-	if (!is_pv && entry && entry.depth_from_root >= max_depth && entry.depth_left >= depth_left) {
-		if (entry.type == TType::EXACT) return entry.eval;
-		if (entry.type == TType::BETA_CUT && entry.eval >= beta) return entry.eval;
-		if (entry.type == TType::FAIL_LOW && entry.eval <= alpha) return entry.eval;
+	bool futility_prune = false;
+
+	if (!is_pv) {
+		u64 hash_key = b.getHash();
+		TTEntry entry = probeTT(hash_key);
+
+		if (entry && entry.depth_left >= depth_left) {
+			if (entry.type == TType::EXACT) return entry.eval;
+			if (entry.type == TType::BETA_CUT && entry.eval >= beta) return entry.eval;
+			if (entry.type == TType::FAIL_LOW && entry.eval <= alpha) return entry.eval;
+		}
+
+		i16 eval = b.getEval();
+
+		//null move pruning
+		if (depth_left >= 3 && !in_check && (eval + 50) > beta) {
+			b.doMove(Move(0, 0));
+			const int R = 4;
+			int null_score = -alphaBeta(-beta, -beta + 1, depth_left - R, false);
+			b.undoMove();
+			if (null_score >= beta) return beta;
+		}
+
+		//reverse futility pruning
+		if (!in_check && depth_left <= 6 && eval >= beta + 80 * depth_left) {
+			return eval;
+		}
+
+		// Futility margins increasing by depth
+		static constexpr int futility_margins[4] = { 0, 100, 300, 500 };
+
+		if (!in_check && depth_left <= 3) {
+			int futility_margin = eval + futility_margins[depth_left];
+			futility_prune = (futility_margin <= alpha);
+		}
 	}
 
 	int best = -100000;
 	Move best_move;
-
-	if (search_ply >= MAX_PLY - 1) return b.getEval();
-
-	//null move pruning
-	if (!is_pv && depth_left >= 3 && !in_check && (b.getEval() + 50) > beta) {
-		b.doMove(Move(0, 0));
-		const int R = 2 + (depth_left / 6);
-		int null_score = -alphaBeta(-beta, -beta + 1, depth_left - 1 - R, false);
-		b.undoMove();
-		if (null_score >= beta) return beta;
-	}
-
-	// Futility margins increasing by depth
-	static constexpr int futility_margins[4] = {0, 100, 300, 500};
-	bool futility_prune = false;
-
-	if (!in_check && depth_left <= 3 && !is_pv) {
-		int futility_margin = b.getEval() + futility_margins[depth_left];
-		futility_prune = (futility_margin <= alpha);
-	}
 
 	move_vec[search_ply].clear();
 	b.genPseudoLegalMoves(move_vec[search_ply]);
@@ -226,7 +235,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 		}
 
 		if (can_reduce) {
-			int R = static_cast<int>(0.5 + std::log(depth_left) * std::log(moves_searched) / 3.0);
+			int R = static_cast<int>(2.0 + std::log(depth_left) * std::log(moves_searched) / 3.0);
 			/*
 			if (move.captured() || move.promotion()) {
 				R = int(0.38 + std::log(depth_left) * std::log(moves_searched) / 3.76);
@@ -234,7 +243,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 				R = int(2.01 + std::log(depth_left) * std::log(moves_searched) / 2.32);
 			}
 			*/
-			score = -alphaBeta(-alpha - 1, -alpha, depth_left - 1 - R, false);
+			score = -alphaBeta(-alpha - 1, -alpha, depth_left - R, false);
 		}
 
 		else if (moves_searched == 0) {
@@ -407,7 +416,8 @@ int Engine::quiesce(int alpha, int beta, bool is_pv) {
 	u64 hash_key = b.getHash();
 	TTEntry entry = probeTT(hash_key);
 
-	if (!is_pv && entry && entry.depth_from_root >= max_depth) {
+	//always accept TB hits in quiescence
+	if (!is_pv && entry) {
 		if (entry.type == TType::EXACT) return entry.eval;
 		if (entry.type == TType::BETA_CUT && entry.eval >= beta) return entry.eval;
 		if (entry.type == TType::FAIL_LOW && entry.eval <= alpha) return entry.eval;
