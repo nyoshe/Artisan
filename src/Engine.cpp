@@ -334,14 +334,18 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 		moves_inspected++;
 		if (checkTime()) return best;
 		int score = 0;
+		
+
+		b.doMove(move);
+		//futility pruning
+		in_check = b.isCheck();
 		bool can_reduce =
 			moves_searched >= 3 &&
 			!in_check &&
 			!is_pv &&
+			!move.captured() &&
+			!move.promotion() &&
 			depth_left >= 3;
-
-		b.doMove(move);
-		//futility pruning
 
 		if (futility_prune &&
 			!move.captured() &&
@@ -356,7 +360,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 		}
 
 		if (can_reduce) {
-			int R = 0;
+			int R = int(0.5 + std::log(depth_left) * std::log(moves_searched) / 3.0);
 			/*
 			if (move.captured() || move.promotion()) {
 				R = int(0.38 + std::log(depth_left) * std::log(moves_searched) / 3.76);
@@ -364,9 +368,6 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 				R = int(2.01 + std::log(depth_left) * std::log(moves_searched) / 2.32);
 			}
 			*/
-			if (!move.captured() && !move.promotion()) {
-				R = int(0.5 + std::log(depth_left) * std::log(moves_searched) / 3.0);
-			}
 			score = -alphaBeta(-alpha - 1, -alpha, depth_left - 1 - R, false);
 		}
 
