@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "Memory.h"
+#include "Misc.h"
 
 enum class TType : u8 {
 	INVALID,
@@ -36,6 +37,12 @@ struct TimeControl {
 	int winc = 0;
 	int binc = 0;
 	int movetime = 0;
+};
+
+
+
+struct SearchStack {
+	Move move;
 };
 
 class Engine {
@@ -102,8 +109,8 @@ public:
 	void storeTTEntry(u64 hash_key, int score, TType type, u8 depth_left, Move best);
 
 	TTEntry probeTT(u64 hash_key) const {
-		u64 index = __mulh(hash_key & 0x7FFFFFFFFFFFFFFF, hash_size);
-		if (tt[index].hash == (hash_key >> 32)) {
+		u64 index = static_cast<std::uint64_t>((static_cast<unsigned __int128>(hash_key) * static_cast<unsigned __int128>(hash_size)) >> 64);
+		if (tt[index].hash == (hash_key & 0xFFFFFFFFull)) {
 			return tt[index];
 		}
 		return TTEntry();

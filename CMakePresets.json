@@ -32,6 +32,7 @@
         {
             "name": "x64-release",
             "displayName": "x64 Release",
+            "inherits": "windows-base",
             "architecture": {
                 "value": "x64",
                 "strategy": "external"

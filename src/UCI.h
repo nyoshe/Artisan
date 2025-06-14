@@ -12,6 +12,11 @@
 
 //#include "../nchess/imgui/imgui.h"
 
+struct UciOptions {
+    unsigned int hash_size = 16;
+    bool debug;
+};
+
 struct EngineData {
     std::string pv;
 };
@@ -19,7 +24,6 @@ class UCI
 {
 public:
     UCI()
-        : debug_mode_(false)
     {
         instance = this;
         engine_ = Engine();
@@ -55,7 +59,15 @@ public:
             }
             else if (token == "setoption")
             {
-                // Option parsing can be implemented here
+                //eat "name" token
+                iss >> token;
+                iss >> token;
+                if (token == "hash") {
+                    //eat "value"
+                    iss >> token;
+                    iss >> token;
+                    options.hash_size = std::stoi(token);
+                }
             }
             else if (token == "ucinewgame")
             {
@@ -81,16 +93,29 @@ public:
             {
                 std::string mode;
                 iss >> mode;
-                debug_mode_ = (mode == "on");
+                options.debug = (mode == "on");
             }
             else if (token == "test")
             {
+                /*
+                 *
+                 *Warning; Illegal pv move g7g6 from pv_lmr
+Info; info score cp 88 depth 10 nodes 77670 nps 3236250 pv c6a7 d1a1 a7c6 a1d1 c6a7 d1a1 a7c6 a1d1 g7g6 e1f1 
+Position; fen rnbqkbnr/1ppp1pp1/p3p2p/8/PP6/6P1/2PPPPBP/RNBQK1NR b KQkq - 0 4
+Moves; f8b4 c2c3 b4e7 g1f3 g8f6 e2e3 d7d5 e1g1 c7c5 d2d4 b8c6 c1b2 c5c4 b1d2 d8b6 d1c2 c8d7 e3e4 e8c8 e4e5 f6h5 a1d1 h8e8 f1e1 c8b8 h2h4
 
-                /*Warning; Illegal pv move c4b3 from new
-Info; info score cp 716 depth 8 nodes 594293 nps 3301627 pv e6c7 e8d8 c4b3 h8g8 c7a6 c8a6 f7a7 g8e8 a7a6
-Position; fen r1bqkb1r/pppp1ppp/2n2n2/4P3/4P3/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 4
-Moves; f6e4 d1d5 f7f5 f1c4 d8e7 e1g1 c6b4 d5d1 b4c6 b1c3 c6e5 c3d5 e5f3 d1f3 e7c5 f3f5 e4f6 d5f6 e8d8 f1e1 f8e7 f5c5 e7c5 f6d5 h7h6 c1f4 d7d6 b2b4 c5b6 e1e7 g7g5 f4d2 b6d4 a1e1 c7c6 d5c7 a8b8 c2c3 d4e5 e7f7 b7b5 c7e6 d8e8 e6c7 e8d8 c7e6 d8e8
+
+                /*Warning; Illegal pv move d5e5 from old
+Info; info score cp -110 depth 2 nodes 179 nps -2147483648 pv b8b7 d5e5
+Position; fen rnbqkbnr/pp2pppp/8/2pp4/3P4/4B1P1/PPP1PP1P/RN1QKBNR b KQkq - 0 3
+Moves; c5d4 d1d4 g8f6 f1g2 b8c6 d4d2 c8f5 b1c3 e7e6 g1f3 f8b4 f3d4 c6d4 e3d4 e8g8 e1g1 a8c8 a2a3 b4c3 d4c3 h7h6 f2f3 a7a6 a1d1 f5g6 f1f2 g8h7 e2e4 d5e4 d2c1 d8c7 c3f6 e4f3 g2f3 g7f6 d1d4 c7b6 d4b4 b6f2 g1f2 c8c2 c1c2 g6c2 b4b7 h7g6 b7a7 c2d3 f2e3 f8d8 f3e2 d3b5 e2b5 a6b5 a7b7 d8d5 e3e2 f6f5 h2h4 d5e5 e2f3 e5d5 f3e2 d5e5 e2f3 e5c5 f3f4 g6f6 f4e3 c5e5 e3f3 e5c5 f3f4 c5d5 f4e3 d5e5 e3f3 e5c5 f3e3 h6h5 e3d4 c5d5 d4e3 d5e5 e3f3 e5d5 f3e3 f6g7 e3e2 d5e5 e2f3 g7g6 b7b8 e5d5 f3e3 d5e5 e3f3 e5c5 f3f4 c5d5 f4e3 g6g7 e3f4 g7f6 f4e3 d5c5 b8b7 c5d5 b2b4 f6g7 e3e2 g7g6 e2e3 g6f6 e3e2 f6g6 e2e3 g6g7 b7b6 g7f6 b6b7 f6g6 b7b8 d5e5 e3f3 g6g7 f3f2 e5d5 f2e3 d5e5 e3f3 g7g6 b8b7 g6f6 f3f2 e5d5 f2e2 f6g7 e2e3 d5e5 e3f2 g7f6 f2f3 f6g6 b7b8 g6g7 b8b7 e5d5 f3e3 g7g6 b7b8 g6f6
                 */
+                /*
+                 *Warning; Illegal pv move e5c6 from old
+Info; info score cp 61 depth 10 nodes 236887 nps 2786905 pv d1d4 e5c6 d4d3 c6e5 d3d4 e5c6 d4d3 c6e5 d3d4 e5c6
+Position; fen r3k2r/pppqbppp/4bn2/3pn3/8/2P1P1P1/PP2NPBP/RNBQ1RK1 w kq - 1 9
+Moves; e2f4 e8g8
+*/
                 static std::vector<std::string> pos_list = {
                     "fen r1bqk1r1/1p1p1n2/p1n2pN1/2p1b2Q/2P1Pp2/1PN5/PB4PP/R4RK1 w q -",
 					"fen r1n2N1k/2n2K1p/3pp3/5Pp1/b5R1/8/1PPP4/8 w -",
@@ -100,9 +125,19 @@ Moves; f6e4 d1d5 f7f5 f1c4 d8e7 e1g1 c6b4 d5d1 b4c6 b1c3 c6e5 c3d5 e5f3 d1f3 e7c
 
                 };
 
-                std::istringstream test("fen r1b2k1r/pp2bppp/4p3/1B6/2P2B2/q2R4/4QPPP/5RK1 b - - 3 19 moves ");
+                std::istringstream test("fen rnbqkbnr/pp2pppp/8/2pp4/3P4/4B1P1/PPP1PP1P/RN1QKBNR b KQkq - 0 3 moves c5d4 d1d4 g8f6 f1g2 b8c6 d4d2 c8f5 b1c3 e7e6 g1f3 f8b4 f3d4 c6d4 e3d4 e8g8 e1g1 a8c8 a2a3 b4c3 d4c3 h7h6 f2f3 a7a6 a1d1 f5g6 f1f2 g8h7 e2e4 d5e4 d2c1 d8c7 c3f6 e4f3 g2f3 g7f6 d1d4 c7b6 d4b4 b6f2 g1f2 c8c2 c1c2 g6c2 b4b7 h7g6 b7a7 c2d3 f2e3 f8d8 f3e2 d3b5 e2b5 a6b5 a7b7 d8d5 e3e2 f6f5 h2h4 d5e5 e2f3 e5d5 f3e2 d5e5 e2f3 e5c5 f3f4 g6f6 f4e3 c5e5 e3f3 e5c5 f3f4 c5d5 f4e3 d5e5 e3f3 e5c5 f3e3 h6h5 e3d4 c5d5 d4e3 d5e5 e3f3 e5d5 f3e3 f6g7 e3e2 d5e5 e2f3 g7g6 b7b8 e5d5 f3e3 d5e5 e3f3 e5c5 f3f4 c5d5 f4e3 g6g7 e3f4 g7f6 f4e3 d5c5 b8b7 c5d5 b2b4 f6g7 e3e2 g7g6 e2e3 g6f6 e3e2 f6g6 e2e3 g6g7 b7b6 g7f6 b6b7 f6g6 b7b8 d5e5 e3f3 g6g7 f3f2 e5d5 f2e3 d5e5 e3f3 g7g6 b8b7 g6f6 f3f2 e5d5 f2e2 f6g7 e2e3 d5e5 e3f2 g7f6 f2f3 f6g6 b7b8 g6g7 b8b7 e5d5 f3e3 g7g6 b7b8 g6f6");
+                chess::Board testb("rnbqkbnr/pp2pppp/8/2pp4/3P4/4B1P1/PPP1PP1P/RN1QKBNR b KQkq - 0 3 ");
 
-
+                /*
+                std::istringstream moves("c5d4 d1d4 g8f6 f1g2 b8c6 d4d2 c8f5 b1c3 e7e6 g1f3 f8b4 f3d4 c6d4 e3d4 e8g8 e1g1 a8c8 a2a3 b4c3 d4c3 h7h6 f2f3 a7a6 a1d1 f5g6 f1f2 g8h7 e2e4 d5e4 d2c1 d8c7 c3f6 e4f3 g2f3 g7f6 d1d4 c7b6 d4b4 b6f2 g1f2 c8c2 c1c2 g6c2 b4b7 h7g6 b7a7 c2d3 f2e3 f8d8 f3e2 d3b5 e2b5 a6b5 a7b7 d8d5 e3e2 f6f5 h2h4 d5e5 e2f3 e5d5 f3e2 d5e5 e2f3 e5c5 f3f4 g6f6 f4e3 c5e5 e3f3 e5c5 f3f4 c5d5 f4e3 d5e5 e3f3 e5c5 f3e3 h6h5 e3d4 c5d5 d4e3 d5e5 e3f3 e5d5 f3e3 f6g7 e3e2 d5e5 e2f3 g7g6 b7b8 e5d5 f3e3 d5e5 e3f3 e5c5 f3f4 c5d5 f4e3 g6g7 e3f4 g7f6 f4e3 d5c5 b8b7 c5d5 b2b4 f6g7 e3e2 g7g6 e2e3 g6f6 e3e2 f6g6 e2e3 g6g7 b7b6 g7f6 b6b7 f6g6 b7b8 d5e5 e3f3 g6g7 f3f2 e5d5 f2e3 d5e5 e3f3 g7g6 b8b7 g6f6 f3f2 e5d5 f2e2 f6g7 e2e3 d5e5 e3f2 g7f6 f2f3 f6g6 b7b8 g6g7 b8b7 e5d5 f3e3 g7g6 b7b8 g6f6");
+                std::string s;
+                while (moves >> s) {
+                    testb.makeMove(chess::uci::uciToMove(testb, s));
+                }
+            	
+                testb.makeMove(chess::uci::uciToMove(testb, "b8b7"));
+                int rep = testb.isRepetition(2);
+				*/
                 //std::istringstream test("fen rn1qkb1r/ppp1ppp1/7p/3p4/6bB/2P2N2/PPP1QPPP/R3KB1R b KQkq - 1 7 moves b8c6 e1c1 a8c8 c1b1 g7g5 h4g3 f8g7 h2h3 g4h5 h3h4 e7e5 h4g5 h6g5 h1h5 h8h5 f3e5 g7e5 e2h5 e5g3 f2g3 d8f6 f1b5 f6e5 d1f1 e5e7 h5h1 e8d7 h1h3 d7d8 h3f5 e7e6 f5f7 e6f7 f1f7 a7a6 b5c6 b7c6 f7g7 d8e8 a2a3 e8f8 g7g5 c8e8 g5f5 f8g7 f5g5 g7f6 g5g4 e8e1 b1a2 a6a5 g4f4 f6g7 f4g4 g7h7 g4f4 h7g7 c3c4 e1e2 c4d5 c6d5 c2c4 c7c6 c4d5 c6d5 f4f5 e2d2 a3a4 d2d3 g3g4 d3d4 a2b1 d4a4 f5d5 a4g4 d5a5 g4g2 a5a7 g7g6 a7d7 g2e2 b1c1 e2e4 c1b1 g6f5 d7f7 f5g4 f7g7 g4f3 g7f7 f3g4 b1c2 e4e2 c2c3 g4g3 b2b4 e2e1 b4b5 e1b1 c3c4 b1b2 c4c5 b2c2 c5b6 c2b2 f7d7 b2b1 d7g7 g3f3 g7f7 f3g3 f7g7 g3f3 b6c6 b1b2 b5b6 b2c2 c6d5 c2d2 d5c4 d2c2 c4d3 c2a2 b6b7 a2b2 g7f7 f3g3 d3c3 b2b5 f7g7 g3f4 g7c7 f4f3 ");
                 engine_.tc.winc = 100000000;
                 engine_.tc.binc = 100000000;
@@ -160,7 +195,7 @@ protected:
 private:
     
     Engine engine_;
-    bool debug_mode_;
+    UciOptions options;
 
     void sendId()
     {

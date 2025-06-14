@@ -11,10 +11,10 @@ add_executable (Artisan "Artisan.cpp" "Artisan.h"
     
     "Move.h" "Move.cpp"
     "MoveGen.h" "MoveGen.cpp"
-    
-    "pgn.h"
+    "include/chess.hpp"
+    "Parser.h"
     "UCI.h"
- "Misc.h"  )
+ "Misc.h"   "Tuner.h" "Tuner.cpp")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET Artisan PROPERTY CXX_STANDARD 20)

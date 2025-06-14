@@ -1,6 +1,6 @@
 #include "Engine.h"
 
-#include <algorithm>
+
 
 void Engine::perftSearch(int d) {
 	if (!d) return;
@@ -105,15 +105,15 @@ Move Engine::search(int depth) {
 
 
 int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
-	if (checkTime()) return b.getEval();
-	nodes++;
 	const int search_ply = b.ply - start_ply;
 	pv_length[search_ply] = 0;
+	if (checkTime()) return b.getEval();
+	nodes++;
 	if (depth_left <= 0) return quiesce(alpha, beta, is_pv);
 
 	bool in_check = b.isCheck();
 	if (b.is3fold() || b.half_move >= 100) return 0;
-	if (depth_left == 0 && in_check) { depth_left++; }
+	if (depth_left <= 0 && in_check) { depth_left = 1; }
 	if (search_ply >= MAX_PLY - 1) return b.getEval();
 
 	bool futility_prune = false;
@@ -187,9 +187,6 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 		bool can_reduce =
 			moves_searched >= 3 &&
 			!in_check &&
-			!is_pv &&
-			!move.captured() &&
-			!move.promotion() &&
 			depth_left >= 3;
 
 		if (futility_prune &&
@@ -204,16 +201,21 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 		}
 
 		if (can_reduce) {
-			int R = static_cast<int>(2.0 + std::log(depth_left) * std::log(moves_searched) / 3.0);
-			//	- history_table[b.us][move.from()][move.to()] / 9164;
+			int R = static_cast<int>(1.0 + log_table[depth_left] * log_table[moves_searched] / 2.5);
+			//	- history_table[!b.us][move.from()][move.to()] / 9164;
+			//int R = 0;
+			R += !is_pv;
+			R -= is_pv;
+			
+			//	
 			/*
 			if (move.captured() || move.promotion()) {
-				R = int(0.38 + std::log(depth_left) * std::log(moves_searched) / 3.76);
+				R = int(log_table[depth_left] * log_table[moves_searched] / 3.76);
 			} else {
-				R = int(2.01 + std::log(depth_left) * std::log(moves_searched) / 2.32);
+				R = int(1.01 + log_table[depth_left] * log_table[moves_searched] / 3.0);
 			}
 			*/
-			score = -alphaBeta(-alpha - 1, -alpha, depth_left - R, false);
+			score = -alphaBeta(-alpha - 1, -alpha, depth_left - 1 - R, false);
 			if (score > alpha) {
 				//research full depth if we fail high
 				score = -alphaBeta(-alpha - 1, -alpha, depth_left - 1, false);
@@ -223,6 +225,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 		else if (!is_pv || moves_searched > 0) {
 			score = -alphaBeta(-alpha - 1, -alpha, depth_left - 1, false);
 		}
+
 		if (is_pv && (moves_searched == 0 || score > alpha)) {
 			score = -alphaBeta(-beta, -alpha, depth_left - 1, true);
 
@@ -240,6 +243,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 			alpha = score;
 			if (is_pv) {
 				b.doMove(best_move);
+
 				if (!b.is3fold()) updatePV(b.ply - start_ply - 1, best_move);
 				b.undoMove();
 			}
@@ -253,8 +257,10 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 					killer_moves[search_ply][1] = killer_moves[search_ply][0];
 					killer_moves[search_ply][0] = move;
 				}
-				int bonus = std::min(7 * depth_left * depth_left + 274 * depth_left - 182, 2048);
-				int malus = -std::min(5 * depth_left * depth_left + 283 * depth_left + 169, 1024);
+				//int bonus = std::min(7 * depth_left * depth_left + 274 * depth_left - 182, 2048);
+				//int malus = -std::min(5 * depth_left * depth_left + 283 * depth_left + 169, 1024);
+				int bonus = std::min(280 * depth_left - 432, 2576);
+				int malus = -std::min(343 * depth_left + 161, 1239);
 				bonus = std::clamp(bonus, -16383, 16383);
 				malus = std::clamp(malus, -16383, 16383);
 				history_table[b.us][move.from()][move.to()] +=
@@ -374,9 +380,25 @@ void Engine::printPV(int score) {
 		<< " nodes " << nodes
 		<< " nps " << static_cast<int>((1000.0 * nodes) / (1000.0 * (std::clock() - start_time) / CLOCKS_PER_SEC))
 		<< " pv ";
-
+	/*
+	std::vector<Move> m = b.getLastMoves(50);
+	for (int i = 0; i < 50; i++) {
+		b.undoMove();
+	}
+	for (int i = 0; i < 50; i++) {
+		b.doMove(m[i]);
+		std::cout << b.getHash() << std::endl;
+		b.printBoard();
+	}
+	*/
 	for (auto& move : pv) {
+		b.doMove(move);
+		//std::cout << b.getHash() << std::endl;
+		//b.printBoard();
 		std::cout << move.toUci() << " ";
+	}
+	for (auto& move : pv) {
+		b.undoMove();
 	}
 	std::cout << std::endl;
 }
@@ -400,10 +422,10 @@ std::string Engine::getPV() {
 }
 
 void Engine::storeTTEntry(u64 hash_key, int score, TType type, u8 depth_left, Move best) {
-	u64 index = __mulh(hash_key & 0x7FFFFFFFFFFFFFFF, hash_size);
+	u64 index = static_cast<std::uint64_t>((static_cast<unsigned __int128>(hash_key) * static_cast<unsigned __int128>(hash_size)) >> 64);
 	if (tt[index].ply <= start_ply || tt[index].depth_left <= depth_left) {
 		tt[index] = TTEntry{
-			static_cast<u32>(hash_key >> 32), score, depth_left, static_cast<u16>(start_ply),
+			static_cast<u32>(hash_key & 0xFFFFFFFFull), score, depth_left, static_cast<u16>(start_ply),
 			static_cast<u8>(max_depth), type, best
 		};
 	}
@@ -411,7 +433,11 @@ void Engine::storeTTEntry(u64 hash_key, int score, TType type, u8 depth_left, Mo
 
 
 bool Engine::checkTime() {
-	if ((std::clock() - start_time) > max_time) return true;
+	static u32 counter = 0;
+	counter++;
+
+		if ((std::clock() - start_time) > max_time) return true;
+
 	return false;
 }
 

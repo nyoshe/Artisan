@@ -17,6 +17,7 @@
 #include <ranges>
 #include <limits>
 #include "Memory.h"
+#include "include/chess.hpp"
 #undef min
 #undef max
 
@@ -63,6 +64,7 @@ private:
     // boards[side][0] = occupancy
     //256 seems big enough, right?
     //std::vector<Move> legal_moves;
+    
     std::array < std::array<u64, 7>, 2 > boards;
 
     static Zobrist initZobristValues() {
@@ -77,7 +79,7 @@ private:
     }
 
     Zobrist z = initZobristValues();
-    std::array<u8, 64> piece_board;
+    std::array<u8, 64> mailbox;
     int eval = 0;
     u64 hash = 0;
     u8 castle_flags = 0b1111;
@@ -110,10 +112,8 @@ public:
 
     [[nodiscard]] Side getSide(int square) const;
     void loadFen(std::istringstream& fen_stream);
-
+    void loadBoard(chess::Board new_board);
     // Returns a Move object corresponding to the given UCI string (e.g. "e2e4", "e7e8q").
-    Move moveFromSan(const std::string& san);
-    std::string sanFromMove(Move move);
     Move moveFromUCI(const std::string& uci);
     void loadUci(std::istringstream& uci);
     void genPseudoLegalCaptures(StaticVector<Move>& moves);
