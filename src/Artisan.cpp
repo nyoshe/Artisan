@@ -8,11 +8,11 @@ using namespace std;
 
 int main()
 {
-
-	//Tuner tuner("quiet-labeled.epd");
 	BB::init();
-	while (true) {
-		UCI::getInstance()->loop();
+	//Tuner tuner("quiet-labeled.epd");
+	
+	while (UCI::getInstance()->loop()) {
+
 	}
 	return 0;
 }

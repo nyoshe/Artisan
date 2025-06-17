@@ -35,6 +35,29 @@ inline u64 rnd64()
     return (i = (164603309694725029ull * i) % 14738995463583502973ull);
 }
 
+struct BoardParams {
+    int32_t tempo = S(20, 43);
+    int32_t doubled_pawns = S(1, 48);
+    int32_t passed_pawns = S(-24, 32);
+    int32_t defender_pawns = S(13, 10);
+    int32_t double_defender_pawns = S(-8, -6);
+    int32_t bishop_pair = S(41, 78);
+    int32_t mobility[5] = { S(0,29), S(7, 20), S(16, 19), S(-11, 18), S(-60, 80) };
+    //int32_t piece[6] = {S(1,1), S(10 ,20), S(10,20), S(10,20), S(10,20) , S(10,20)};
+    //int32_t phase_values = S(100,100);
+};
+
+struct EvalCounts {
+    int32_t tempo = 0;
+    int32_t doubled_pawns = 0;
+    int32_t passed_pawns = 0;
+    int32_t defender_pawns = 0;
+    int32_t double_defender_pawns = 0;
+    int32_t bishop_pair = 0;
+    int32_t mobility[5];
+    //int32_t piece[6];
+    //int32_t phase_values = S(100,100);
+};
 
 struct BoardState {
     u64 hash = 0;
@@ -84,12 +107,15 @@ private:
     u64 hash = 0;
     u8 castle_flags = 0b1111;
     int ep_square = -1; // -1 means no en passant square, ep square represents piece taken
+
 public:
-    int tunable = 0;
+    EvalCounts eval_c;
+    BoardParams params;
     std::vector<BoardState> state_stack;
     bool us = eWhite;
     int ply = 0;
     u16 half_move = 0;
+
     Board();
     // Copy constructor
     Board(const Board& other) = default;
@@ -165,14 +191,14 @@ public:
     std::vector<Move> getLastMoves(int n_moves) const;
 
     u64 getHash() const;
-    bool is3fold();
+    bool is3fold(int n);
 
     [[nodiscard]] u64 calcHash() const;
 
     void updateZobrist(Move move);
 
-    int getMobility(bool side) const;
+    int getMobility(bool side) ;
 
-    int evalUpdate() const;
+    int evalUpdate() ;
 };
 

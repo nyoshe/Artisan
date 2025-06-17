@@ -68,7 +68,7 @@ Move Engine::search(int depth) {
 	max_depth = 1;
 	int score = alphaBeta(-100000, 100000, max_depth, true);
 
-	for (max_depth = 1; max_depth < MAX_PLY; max_depth++) {
+	for (max_depth = 2; max_depth < MAX_PLY; max_depth++) {
 		// Keep searching until we get a score within our window
 		pv_length[0] = 0;
 		int delta = 9 + score * score / 16384;
@@ -106,13 +106,18 @@ Move Engine::search(int depth) {
 
 int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 	const int search_ply = b.ply - start_ply;
+	if (b.is3fold(2) || b.half_move >= 100) {
+		return 0;
+	}
+
 	pv_length[search_ply] = 0;
 	if (checkTime()) return b.getEval();
 	nodes++;
+
 	if (depth_left <= 0) return quiesce(alpha, beta, is_pv);
 
 	bool in_check = b.isCheck();
-	if (b.is3fold() || b.half_move >= 100) return 0;
+
 	if (depth_left <= 0 && in_check) { depth_left = 1; }
 	if (search_ply >= MAX_PLY - 1) return b.getEval();
 
@@ -182,13 +187,9 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 		}
 
 		b.doMove(move);
-		//futility pruning
+		
 		in_check = b.isCheck();
-		bool can_reduce =
-			moves_searched >= 3 &&
-			!in_check &&
-			depth_left >= 3;
-
+		//futility pruning
 		if (futility_prune &&
 			!move.captured() &&
 			!move.promotion() &&
@@ -200,7 +201,8 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 			continue;
 		}
 
-		if (can_reduce) {
+		//search reductions
+		if (moves_searched >= (3 + !search_ply) && !in_check && depth_left >= 3) {
 			int R = static_cast<int>(1.0 + log_table[depth_left] * log_table[moves_searched] / 2.5);
 			//	- history_table[!b.us][move.from()][move.to()] / 9164;
 			//int R = 0;
@@ -243,8 +245,9 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 			alpha = score;
 			if (is_pv) {
 				b.doMove(best_move);
+				std::string we = move.toUci();
+				if (!b.is3fold(2)) updatePV(b.ply - start_ply - 1, best_move);
 
-				if (!b.is3fold()) updatePV(b.ply - start_ply - 1, best_move);
 				b.undoMove();
 			}
 			raised_alpha = true;
@@ -289,7 +292,7 @@ int Engine::quiesce(int alpha, int beta, bool is_pv) {
 	nodes++;
 	int search_ply = b.ply - start_ply;
 
-	if (b.is3fold()) return 0;
+	if (b.is3fold(2) || b.half_move >= 100) return 0;
 
 	int stand_pat = b.getEval();
 	int best = stand_pat;
@@ -377,6 +380,7 @@ std::vector<Move> Engine::getPrincipalVariation() const {
 void Engine::printPV(int score) {
 	std::vector<Move> pv = getPrincipalVariation();
 	std::cout << "info score cp " << score << " depth " << max_depth
+		<< " time " << (std::clock() - start_time)
 		<< " nodes " << nodes
 		<< " nps " << static_cast<int>((1000.0 * nodes) / (1000.0 * (std::clock() - start_time) / CLOCKS_PER_SEC))
 		<< " pv ";
@@ -391,13 +395,20 @@ void Engine::printPV(int score) {
 		b.printBoard();
 	}
 	*/
+	int i = 0;
 	for (auto& move : pv) {
+		i++;
 		b.doMove(move);
 		//std::cout << b.getHash() << std::endl;
 		//b.printBoard();
+		if (b.is3fold(2)) {
+			break;
+		}
+
 		std::cout << move.toUci() << " ";
+		
 	}
-	for (auto& move : pv) {
+	for (int j = 0; j < i; j++) {
 		b.undoMove();
 	}
 	std::cout << std::endl;
@@ -449,16 +460,19 @@ void Engine::calcTime() {
 	int search_ply = b.ply - start_ply;
 
 	float num_moves = move_vec[search_ply].size();
-	float factor = num_moves / 500.0;
+	float factor = num_moves / 1000.0;
 
 	float total_time = b.us ? tc.btime : tc.wtime;
 	float inc = b.us ? tc.binc : tc.winc;
 
-	if (total_time < inc) {
-		max_time = inc * 0.95;
+	if (total_time < inc * 2) {
+		max_time = inc * 0.80;
+	}
+	else if (total_time < inc) {
+		max_time = total_time * 0.80;
 	}
 	else {
-		max_time = (total_time * factor) + inc * 0.95;
+		max_time = (total_time * factor) + inc * 0.80;
 	}
 }
 

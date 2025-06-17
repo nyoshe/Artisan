@@ -38,7 +38,7 @@ public:
         }
         engine_.setBoardUCI(iss);
     }
-    void loop()
+    int loop()
     {
         std::string line;
 
@@ -87,7 +87,7 @@ public:
             }
             else if (token == "quit")
             {
-                //nothing
+                return 0;
             }
             else if (token == "debug")
             {
@@ -99,23 +99,14 @@ public:
             {
                 /*
                  *
-                 *Warning; Illegal pv move g7g6 from pv_lmr
-Info; info score cp 88 depth 10 nodes 77670 nps 3236250 pv c6a7 d1a1 a7c6 a1d1 c6a7 d1a1 a7c6 a1d1 g7g6 e1f1 
-Position; fen rnbqkbnr/1ppp1pp1/p3p2p/8/PP6/6P1/2PPPPBP/RNBQK1NR b KQkq - 0 4
-Moves; f8b4 c2c3 b4e7 g1f3 g8f6 e2e3 d7d5 e1g1 c7c5 d2d4 b8c6 c1b2 c5c4 b1d2 d8b6 d1c2 c8d7 e3e4 e8c8 e4e5 f6h5 a1d1 h8e8 f1e1 c8b8 h2h4
+
+                Warning; Illegal pv move c8e6 from passed_pawn
+Info; info score cp 52 depth 2 time 0 nodes 731 nps -2147483648 pv h4f3 c8e6
+Position; fen rnb1kbnr/p4pp1/2pp1q1p/4p3/2B1P3/5N1P/PPP2PP1/RNBQK2R w KQkq - 1 8
+Moves; b1c3 f6g6 f3h4 g6f6 h4f3 f6g6 f3h4 g6f6
 
 
-                /*Warning; Illegal pv move d5e5 from old
-Info; info score cp -110 depth 2 nodes 179 nps -2147483648 pv b8b7 d5e5
-Position; fen rnbqkbnr/pp2pppp/8/2pp4/3P4/4B1P1/PPP1PP1P/RN1QKBNR b KQkq - 0 3
-Moves; c5d4 d1d4 g8f6 f1g2 b8c6 d4d2 c8f5 b1c3 e7e6 g1f3 f8b4 f3d4 c6d4 e3d4 e8g8 e1g1 a8c8 a2a3 b4c3 d4c3 h7h6 f2f3 a7a6 a1d1 f5g6 f1f2 g8h7 e2e4 d5e4 d2c1 d8c7 c3f6 e4f3 g2f3 g7f6 d1d4 c7b6 d4b4 b6f2 g1f2 c8c2 c1c2 g6c2 b4b7 h7g6 b7a7 c2d3 f2e3 f8d8 f3e2 d3b5 e2b5 a6b5 a7b7 d8d5 e3e2 f6f5 h2h4 d5e5 e2f3 e5d5 f3e2 d5e5 e2f3 e5c5 f3f4 g6f6 f4e3 c5e5 e3f3 e5c5 f3f4 c5d5 f4e3 d5e5 e3f3 e5c5 f3e3 h6h5 e3d4 c5d5 d4e3 d5e5 e3f3 e5d5 f3e3 f6g7 e3e2 d5e5 e2f3 g7g6 b7b8 e5d5 f3e3 d5e5 e3f3 e5c5 f3f4 c5d5 f4e3 g6g7 e3f4 g7f6 f4e3 d5c5 b8b7 c5d5 b2b4 f6g7 e3e2 g7g6 e2e3 g6f6 e3e2 f6g6 e2e3 g6g7 b7b6 g7f6 b6b7 f6g6 b7b8 d5e5 e3f3 g6g7 f3f2 e5d5 f2e3 d5e5 e3f3 g7g6 b8b7 g6f6 f3f2 e5d5 f2e2 f6g7 e2e3 d5e5 e3f2 g7f6 f2f3 f6g6 b7b8 g6g7 b8b7 e5d5 f3e3 g7g6 b7b8 g6f6
-                */
-                /*
-                 *Warning; Illegal pv move e5c6 from old
-Info; info score cp 61 depth 10 nodes 236887 nps 2786905 pv d1d4 e5c6 d4d3 c6e5 d3d4 e5c6 d4d3 c6e5 d3d4 e5c6
-Position; fen r3k2r/pppqbppp/4bn2/3pn3/8/2P1P1P1/PP2NPBP/RNBQ1RK1 w kq - 1 9
-Moves; e2f4 e8g8
-*/
+            	*/
                 static std::vector<std::string> pos_list = {
                     "fen r1bqk1r1/1p1p1n2/p1n2pN1/2p1b2Q/2P1Pp2/1PN5/PB4PP/R4RK1 w q -",
 					"fen r1n2N1k/2n2K1p/3pp3/5Pp1/b5R1/8/1PPP4/8 w -",
@@ -125,9 +116,9 @@ Moves; e2f4 e8g8
 
                 };
 
-                std::istringstream test("fen rnbqkbnr/pp2pppp/8/2pp4/3P4/4B1P1/PPP1PP1P/RN1QKBNR b KQkq - 0 3 moves c5d4 d1d4 g8f6 f1g2 b8c6 d4d2 c8f5 b1c3 e7e6 g1f3 f8b4 f3d4 c6d4 e3d4 e8g8 e1g1 a8c8 a2a3 b4c3 d4c3 h7h6 f2f3 a7a6 a1d1 f5g6 f1f2 g8h7 e2e4 d5e4 d2c1 d8c7 c3f6 e4f3 g2f3 g7f6 d1d4 c7b6 d4b4 b6f2 g1f2 c8c2 c1c2 g6c2 b4b7 h7g6 b7a7 c2d3 f2e3 f8d8 f3e2 d3b5 e2b5 a6b5 a7b7 d8d5 e3e2 f6f5 h2h4 d5e5 e2f3 e5d5 f3e2 d5e5 e2f3 e5c5 f3f4 g6f6 f4e3 c5e5 e3f3 e5c5 f3f4 c5d5 f4e3 d5e5 e3f3 e5c5 f3e3 h6h5 e3d4 c5d5 d4e3 d5e5 e3f3 e5d5 f3e3 f6g7 e3e2 d5e5 e2f3 g7g6 b7b8 e5d5 f3e3 d5e5 e3f3 e5c5 f3f4 c5d5 f4e3 g6g7 e3f4 g7f6 f4e3 d5c5 b8b7 c5d5 b2b4 f6g7 e3e2 g7g6 e2e3 g6f6 e3e2 f6g6 e2e3 g6g7 b7b6 g7f6 b6b7 f6g6 b7b8 d5e5 e3f3 g6g7 f3f2 e5d5 f2e3 d5e5 e3f3 g7g6 b8b7 g6f6 f3f2 e5d5 f2e2 f6g7 e2e3 d5e5 e3f2 g7f6 f2f3 f6g6 b7b8 g6g7 b8b7 e5d5 f3e3 g7g6 b7b8 g6f6");
+                //std::istringstream test("fen r2qkb1r/p1pp1ppp/1p2pn2/8/1nPP4/2N1PP2/PPQ2P1P/R1B1KB1R w KQkq - 1 8 moves c2d2 c7c5 d4d5 f8d6 f1g2 e6d5 a2a3 b4a6 c4d5 e8g8 e1g1 f8e8 f3f4 a6c7 e3e4 f6h5 e4e5 d6f8 d5d6 c7e6 g2a8 d8a8 d2d5 h5f4 d5a8 e8a8 f1e1 f4d3 e1e3 c5c4 c3b5 e6c5 c1d2 d3b2 d2b4 c5d3 b5c7 a8c8 b4c3 b2a4 c3d4 h7h5 e3e4 c8d8 a1a2 f7f5 e5f6 f8d6 e4e8 d8e8 c7e8 d6c5 d4c5 a4c5 f6g7 d3f4 f2f3 c4c3 a2c2 h5h4 g1h1 f4d5 e8d6 h4h3 d6f5 g8h7 c2c1 c5d3 c1c2 b6b5 c2e2 d5c7 e2c2 c7d5 c2e2");
                 chess::Board testb("rnbqkbnr/pp2pppp/8/2pp4/3P4/4B1P1/PPP1PP1P/RN1QKBNR b KQkq - 0 3 ");
-
+                std::istringstream test("fen 6r1/r1p5/Pp3qpk/2nPp2p/4Pp2/5Q1P/2R1BPP1/3R2K1 w - - 15 39");
                 /*
                 std::istringstream moves("c5d4 d1d4 g8f6 f1g2 b8c6 d4d2 c8f5 b1c3 e7e6 g1f3 f8b4 f3d4 c6d4 e3d4 e8g8 e1g1 a8c8 a2a3 b4c3 d4c3 h7h6 f2f3 a7a6 a1d1 f5g6 f1f2 g8h7 e2e4 d5e4 d2c1 d8c7 c3f6 e4f3 g2f3 g7f6 d1d4 c7b6 d4b4 b6f2 g1f2 c8c2 c1c2 g6c2 b4b7 h7g6 b7a7 c2d3 f2e3 f8d8 f3e2 d3b5 e2b5 a6b5 a7b7 d8d5 e3e2 f6f5 h2h4 d5e5 e2f3 e5d5 f3e2 d5e5 e2f3 e5c5 f3f4 g6f6 f4e3 c5e5 e3f3 e5c5 f3f4 c5d5 f4e3 d5e5 e3f3 e5c5 f3e3 h6h5 e3d4 c5d5 d4e3 d5e5 e3f3 e5d5 f3e3 f6g7 e3e2 d5e5 e2f3 g7g6 b7b8 e5d5 f3e3 d5e5 e3f3 e5c5 f3f4 c5d5 f4e3 g6g7 e3f4 g7f6 f4e3 d5c5 b8b7 c5d5 b2b4 f6g7 e3e2 g7g6 e2e3 g6f6 e3e2 f6g6 e2e3 g6g7 b7b6 g7f6 b6b7 f6g6 b7b8 d5e5 e3f3 g6g7 f3f2 e5d5 f2e3 d5e5 e3f3 g7g6 b8b7 g6f6 f3f2 e5d5 f2e2 f6g7 e2e3 d5e5 e3f2 g7f6 f2f3 f6g6 b7b8 g6g7 b8b7 e5d5 f3e3 g7g6 b7b8 g6f6");
                 std::string s;
@@ -163,6 +154,7 @@ Moves; e2f4 e8g8
             }
             // Add more UCI commands as needed
         }
+        return 1;
     }
 
     void getEngineUpdate() {
