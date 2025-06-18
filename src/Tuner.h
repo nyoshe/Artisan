@@ -25,6 +25,7 @@ void printWeatherFactoryConfig();
 
 TUNABLE_PARAM(PAWN_CORR_WEIGHT, 186, 64, 2048, 32)
 
+//error: 0.0614735 {20, 44} {1, 48} {-23, 68} {10, 21} {-8, 5} {39, 74} {0, 28} {9, 17} {16, 17} {-8, 18} {-86, 84} {13, -49}
 class Tuner
 {
 public:

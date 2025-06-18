@@ -106,20 +106,22 @@ Move Engine::search(int depth) {
 
 int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 	const int search_ply = b.ply - start_ply;
+	nodes++;
 	if (b.is3fold(2) || b.half_move >= 100) {
 		return 0;
 	}
 
 	pv_length[search_ply] = 0;
 	if (checkTime()) return b.getEval();
-	nodes++;
-
-	if (depth_left <= 0) return quiesce(alpha, beta, is_pv);
-
+	
 	bool in_check = b.isCheck();
-
 	if (depth_left <= 0 && in_check) { depth_left = 1; }
 	if (search_ply >= MAX_PLY - 1) return b.getEval();
+	if (depth_left <= 0) return quiesce(alpha, beta, is_pv);
+
+	
+
+	
 
 	bool futility_prune = false;
 
@@ -244,10 +246,8 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 		if (score > alpha) {
 			alpha = score;
 			if (is_pv) {
-				b.doMove(best_move);
-				std::string we = move.toUci();
+				b.doMove(move);
 				if (!b.is3fold(2)) updatePV(b.ply - start_ply - 1, best_move);
-
 				b.undoMove();
 			}
 			raised_alpha = true;

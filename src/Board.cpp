@@ -725,12 +725,12 @@ void Board::filterToLegal(StaticVector<Move>& moves) {
 			//moves.erase(moves.begin() + i);
 			continue;
 		}
+		
+		doMove(move);
 		if (is3fold(2)) {
-
+			undoMove();
 			continue;
 		}
-		doMove(move);
-		
 		us ^= 1;
 		bool inCheck = isCheck();
 		us ^= 1;
@@ -1044,21 +1044,44 @@ int Board::evalUpdate()  {
 	eval_pst(eWhite, +1);
 	eval_pst(eBlack, -1);
 
+	u64 w_front_spans = 0;
+	u64 b_front_spans = 0;
+
 	for (int file = 0; file < 8; file++) {
-		/*
-            if (boards[eWhite][ePawn] & BB::files[file])
-                out -= (boards[eWhite][ePawn] & BB::neighbor_files[file]) ? 0 : 10;
-            if (boards[eBlack][ePawn] & BB::files[file])
-                out += (boards[eBlack][ePawn] & BB::neighbor_files[file]) ? 0 : 10;
-			*/
+
+		u64 white_pawns = boards[eWhite][ePawn] & BB::files[file];
+		u64 black_pawns = boards[eBlack][ePawn] & BB::files[file];
+
+		u64 white_neighbors = 0, black_neighbors = 0;
+
+		white_neighbors |= boards[eWhite][ePawn] & BB::neighbor_files[file];
+		black_neighbors |= boards[eBlack][ePawn] & BB::neighbor_files[file];
+		
+		// Count isolated pawns for this file
+		eval_c.isolated_pawns += BB::popcnt(white_pawns & ~white_neighbors);
+		eval_c.isolated_pawns -= BB::popcnt(black_pawns & ~black_neighbors);
+
 		//count doubled 
 		eval_c.doubled_pawns +=
-		(int(BB::popcnt(boards[eBlack][ePawn] & BB::files[file]) >= 2) -
-			int(BB::popcnt(boards[eWhite][ePawn] & BB::files[file]) >= 2));
+		(int(BB::popcnt(white_pawns) >= 2) -
+			int(BB::popcnt(white_pawns) >= 2));
 		//count passed
-		eval_c.passed_pawns +=  (((boards[eWhite][ePawn] & BB::files[file]) != 0) && (boards[eBlack][ePawn] & (BB::files[file] | BB::neighbor_files[file])) == 0);
-		eval_c.passed_pawns -= (((boards[eBlack][ePawn] & BB::files[file]) != 0) && (boards[eWhite][ePawn] & (BB::files[file] | BB::neighbor_files[file])) == 0);
+		
+		while (white_pawns) {
+			unsigned long at = 0;
+			BB::bitscan_reset(at, white_pawns);
+			w_front_spans |= BB::front_spans[eWhite][at];
+		}
+		while (black_pawns) {
+			unsigned long at = 0;
+			BB::bitscan_reset(at, black_pawns);
+			b_front_spans |= BB::front_spans[eBlack][at];
+		}
 	}
+	eval_c.passed_pawns += BB::popcnt(boards[eWhite][ePawn] & ~b_front_spans);
+	eval_c.passed_pawns -= BB::popcnt(boards[eBlack][ePawn] & ~w_front_spans);
+
+	
 
 	u64 occ = boards[eBlack][0] | boards[eWhite][0];
 	//count defenders
@@ -1081,12 +1104,17 @@ int Board::evalUpdate()  {
 	int black_king_sq = BB::bitscan(boards[eBlack][eKing]);
 
 	
+
+	
 	auto king_safety = [&](int sq, bool side) {
-		u64 king_acc = BB::king_attacks[sq];
-		king_acc = (~boards[side][0] & (king_acc | BB::set_bit(sq))) << (side ? -8 : 8);
-		king_acc = (~boards[side][0] & (king_acc | BB::set_bit(sq))) << (side ? -8 : 8);
-		king_acc = (~boards[side][0] & (king_acc | BB::set_bit(sq))) << (side ? -8 : 8);
-		return (king_acc | BB::king_attacks[sq]) & ~BB::set_bit(sq);
+		u64 king_acc = BB::king_attacks[sq] & ~boards[side][0];
+		king_acc |= ~getOccupancy() & ((king_acc | BB::set_bit(sq)) << (side ? -8 : 8));
+		//std::cout << BB::to_string(king_acc) << std::endl;
+		king_acc |= ~getOccupancy() & ((king_acc | BB::set_bit(sq)) << (side ? -8 : 8));
+		//std::cout << BB::to_string(king_acc) << std::endl;
+		//king_acc |= ~getOccupancy() & ((king_acc | BB::set_bit(sq)) << (side ? -8 : 8));
+		//std::cout << BB::to_string(king_acc) << std::endl;
+		return (king_acc) & ~boards[side][0];
 	};
 	static const int SafetyTable[100] = {
 		0,  0,   1,   2,   3,   5,   7,   9,  12,  15,
@@ -1112,38 +1140,55 @@ int Board::evalUpdate()  {
 		unsigned long at = 0;
 		int attack_val = 0;
 		int num_attackers = 0;
-		static const int CountModifier[8] = { 0, 0, 63, 126, 96, 124, 124, 128 };
+
+		if (side == eBlack) {
+			u64 east_defenders = BB::get_pawn_attacks(eEast, eWhite, boards[eWhite][ePawn], boards[eWhite][0]);
+			u64 west_defenders = BB::get_pawn_attacks(eWest, eWhite, boards[eWhite][ePawn], boards[eWhite][0]);
+		} else {
+			u64 east_defenders = BB::get_pawn_attacks(eEast, eBlack, boards[eBlack][ePawn], boards[eBlack][0]);
+			u64 west_defenders = BB::get_pawn_attacks(eWest, eBlack, boards[eBlack][ePawn], boards[eBlack][0]);
+
+		}
+		
+		
+		
+		//static const int CountModifier[8] = { 0, 0, 63, 126, 96, 124, 124, 128 };
+
 		while (knights) {
 			BB::bitscan_reset(at, knights);
-			attack_val += 36 * BB::popcnt(BB::knight_attacks[at] & ~boards[side][0] & king_zone);
+			attack_val += 2 * BB::popcnt(BB::knight_attacks[at] & king_zone);
 			num_attackers++;
 		}
 		at = 0;
 		while (bishops) {
 			BB::bitscan_reset(at, bishops);
-			attack_val += 22 * BB::popcnt(BB::get_bishop_attacks(at, occ) & ~boards[side][0] & king_zone);
+			attack_val += 3 * BB::popcnt(BB::get_bishop_attacks(at, occ) & king_zone);
 			num_attackers++;
 		}
 		at = 0;
 		while (rooks) {
 			BB::bitscan_reset(at, rooks);
-			attack_val += 23 * BB::popcnt(BB::get_rook_attacks(at, occ) & ~boards[side][0] & king_zone);
+			attack_val += 4 * BB::popcnt(BB::get_rook_attacks(at, occ) & king_zone);
 			num_attackers++;
 		}
 		at = 0;
 		while (queens) {
 			BB::bitscan_reset(at, queens);
-			attack_val += 78 * BB::popcnt(BB::get_queen_attacks(at, occ) & ~boards[side][0] & king_zone);
+			attack_val += 5 * BB::popcnt(BB::get_queen_attacks(at, occ) & king_zone);
 			num_attackers++;
 		}
 
-		int danger = (CountModifier[std::min(num_attackers, 7)] * attack_val) / 128;
+		int danger = (SafetyTable[std::min(attack_val, 100)]);
 		return danger;
 	};
-        
+	//printBoard();
+
+	//std::cout << BB::to_string(king_safety(BB::bitscan(boards[eWhite][eKing]), eWhite));
 	//get attacks, ignoring our pieces
-	out -= S(king_attack_val(eWhite), 0);
-	out += S(king_attack_val(eBlack), 0);
+	int w_attacks = king_attack_val(eWhite);
+	int b_attacks = king_attack_val(eBlack);
+	out -= S(w_attacks,0);
+	out += S(b_attacks,0);
 	
 
 
@@ -1155,7 +1200,7 @@ int Board::evalUpdate()  {
 	//out = us == eWhite ? out : -out;
 	//int i = 0;
 
-	for (int i = 0; i < sizeof(BoardParams) / 4; i++) {
+	for (int i = 0; i < sizeof(EvalCounts) / 4; i++) {
 		out += S(reinterpret_cast<const i32*>(&eval_c)[i] * MG_SCORE(reinterpret_cast<const i32*>(&params)[i]),
 				reinterpret_cast<const i32*>(&eval_c)[i] * EG_SCORE(reinterpret_cast<const i32*>(&params)[i]));
 	}

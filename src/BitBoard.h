@@ -86,6 +86,10 @@ namespace BB {
     inline u64 ranks[8];
     inline u64 neighbor_files[8];
 
+    inline u64 front_spans[2][64];
+
+
+
 
     inline Pos dirs[8] = {
         {  0,  1 }, // up
@@ -205,18 +209,20 @@ namespace BB {
 
     inline void init()
     {
-
-
+        
         for (int i = 0; i < 7; i++) {
             for (int square = 0; square < 64; square++) {
                 mg_table[i][square] += mg_p_val[i];
                 eg_table[i][square] += eg_p_val[i];
             }
         }
+
         // Rook directions: N, S, E, W
         const Direction rook_dirs[] = { eNorth, eSouth, eEast, eWest };
         // Bishop directions: NE, NW, SE, SW
         const Direction bishop_dirs[] = { eNorthEast, eNorthWest, eSouthEast, eSouthWest };
+
+        
 
         // Initialize bishop and rook blocker masks
         for (int i = 0; i < 64; i++) {
@@ -325,6 +331,26 @@ namespace BB {
         for (int file = 0; file < 8; file++) {
             neighbor_files[file] = (file < 7 ? BB::files[file + 1] : 0) | (file > 0 ? BB::files[file - 1] : 0);
         }
+
+        //pawn front spans
+        for (int sq = 0; sq < 64; ++sq) {
+            int file = sq & 7;
+            int rank = sq >> 3;
+
+            // White front span: all squares ahead on file and adjacent files
+            u64 mask = BB::files[file];
+            if (file > 0) mask |= BB::files[file - 1];
+            if (file < 7) mask |= BB::files[file + 1];
+            front_spans[eWhite][sq] = 0;
+            for (int r = rank + 1; r < 8; ++r)
+                front_spans[eWhite][sq] |= mask & BB::ranks[r];
+
+            // Black front span: all squares ahead on file and adjacent files
+            front_spans[eBlack][sq] = 0;
+            for (int r = rank - 1; r >= 0; --r)
+                front_spans[eBlack][sq] |= mask & BB::ranks[r];
+        }
+
 
         std::vector<std::vector<u64>> blocker_combos;
         
