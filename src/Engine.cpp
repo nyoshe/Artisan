@@ -59,14 +59,19 @@ Move Engine::search(int depth) {
 	b.genPseudoLegalMoves(move_vec[0]);
 	b.filterToLegal(move_vec[0]);
 	calcTime();
-	Move best_move = move_vec[0].front();
+	
 	std::vector<std::pair<int, Move>> sorted_moves;
 	for (auto move : move_vec[0]) {
 		sorted_moves.push_back({-100000, move});
 	}
 
-	max_depth = 1;
+	max_depth = 2;
 	int score = alphaBeta(-100000, 100000, max_depth, true);
+	Move best_move = pv_table[0][0];
+	if (!best_move) {
+		best_move = move_vec[0].front();
+	}
+	bool add_time = false;
 
 	for (max_depth = 2; max_depth < MAX_PLY; max_depth++) {
 		// Keep searching until we get a score within our window
@@ -91,14 +96,39 @@ Move Engine::search(int depth) {
 			if (alpha <= -100000 && beta >= 100000) break;
 		}
 
-		if (checkTime()) break;
+		Move prev_best = best_move;
+
+		
+
+		if (checkTime()) {
+			//allocate extra time if we just had a best move change
+			
+			if (prev_best != pv_table[0][0] && !add_time) {
+				float total_time = b.us ? tc.btime : tc.wtime;
+				float inc = b.us ? tc.binc : tc.winc;
+				if (max_time * 3.0 < total_time - inc - 10) {
+					max_time = max_time * 3.0;
+					add_time = true;
+				}
+			} else {
+				break;
+			}
+
+		} else if (prev_best == pv_table[0][0] && (std::clock() - start_time) > max_time / 2.0) {
+			if (pv_table[0][0]) {
+				best_move = pv_table[0][0];
+				expected_response = pv_table[0][1];
+			}
+			break;
+		}
+
+		
 		if (pv_table[0][0]) {
 			best_move = pv_table[0][0];
+			expected_response = pv_table[0][1];
 		}
+
 		printPV(score);
-	}
-	if (best_move.from() == 0 && best_move.to() == 0) {
-		best_move = pv_table[0][0];
 	}
 	return best_move;
 }
@@ -217,8 +247,12 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 			*/
 			score = -alphaBeta(-alpha - 1, -alpha, depth_left - 1 - R, false);
 			if (score > alpha) {
+				int new_depth = depth_left;
+				//history_table[!b.us][move.from()][move.to()];
+				
+				new_depth += score > (alpha + 50);
 				//research full depth if we fail high
-				score = -alphaBeta(-alpha - 1, -alpha, depth_left - 1, false);
+				score = -alphaBeta(-alpha - 1, -alpha, new_depth - 1, false);
 			}
 		}
 
@@ -260,13 +294,13 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 				//int malus = -std::min(5 * depth_left * depth_left + 283 * depth_left + 169, 1024);
 				int bonus = std::min(280 * depth_left - 432, 2576);
 				int malus = -std::min(343 * depth_left + 161, 1239);
-				bonus = std::clamp(bonus, -16383, 16383);
-				malus = std::clamp(malus, -16383, 16383);
+				bonus = std::clamp(bonus, -16384, 16384);
+				malus = std::clamp(malus, -16384, 16384);
 				history_table[b.us][move.from()][move.to()] +=
-					bonus - history_table[b.us][move.from()][move.to()] * abs(bonus) / 16383;
+					bonus - history_table[b.us][move.from()][move.to()] * abs(bonus) / 16384;
 				for (auto& quiet : seen_quiets[search_ply]) {
 					history_table[b.us][quiet.from()][quiet.to()] +=
-						malus - history_table[b.us][quiet.from()][quiet.to()] * abs(malus) / 16383;
+						malus - history_table[b.us][quiet.from()][quiet.to()] * abs(malus) / 16384;
 				}
 			}
 
@@ -456,21 +490,24 @@ void Engine::calcTime() {
 	}
 	int search_ply = b.ply - start_ply;
 
-	float num_moves = move_vec[search_ply].size();
-	float factor = num_moves / 1000.0;
-
-	float total_time = b.us ? tc.btime : tc.wtime;
-	float inc = b.us ? tc.binc : tc.winc;
-
-	if (total_time < inc * 2) {
-		max_time = inc * 0.80;
+	double num_moves = move_vec[search_ply].size();
+	double factor = num_moves / 1000.0;
+	if (expected_response != b.state_stack.back().move) {
+		factor *= 2.0;
+	} else if (expected_response.captured()) {
+		factor /= 2.0;
 	}
-	else if (total_time < inc) {
-		max_time = total_time * 0.80;
-	}
-	else {
+
+	double total_time = b.us ? tc.btime : tc.wtime;
+	double inc = b.us ? tc.binc : tc.winc;
+
+	if (total_time < (total_time * factor) + inc * 0.80) {
+		max_time = std::min(inc * 0.80, inc * factor);
+	} else {
 		max_time = (total_time * factor) + inc * 0.80;
 	}
+
+	
 }
 
 void Engine::updatePV(int depth, Move move) {

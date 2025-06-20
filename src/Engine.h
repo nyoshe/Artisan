@@ -58,6 +58,7 @@ class Engine {
 	u16 max_depth = 0;
 	int nodes = 0;
 	Move root_best;
+	Move expected_response;
 
 	// Timer variables
 	std::clock_t start_time = 0;
@@ -73,7 +74,6 @@ class Engine {
 public:
 	std::array<std::array<std::array<int, 64>, 64>, 2> history_table;
 	int hash_hits = 0;
-	std::array<StaticVector<int>, 64> eval_vec;
 	std::array<StaticVector<Move>, 64> seen_quiets;
 	std::array<std::array<Move, 2>, MAX_PLY> killer_moves;
 	int start_ply = 0;
