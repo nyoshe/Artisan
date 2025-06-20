@@ -107,7 +107,7 @@ Move Engine::search(int depth) {
 int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 	const int search_ply = b.ply - start_ply;
 	nodes++;
-	if (b.is3fold(2) || b.half_move >= 100) {
+	if (b.isRepetition(search_ply ? 1 : 2) || b.half_move >= 100) {
 		return 0;
 	}
 
@@ -118,10 +118,6 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 	if (depth_left <= 0 && in_check) { depth_left = 1; }
 	if (search_ply >= MAX_PLY - 1) return b.getEval();
 	if (depth_left <= 0) return quiesce(alpha, beta, is_pv);
-
-	
-
-	
 
 	bool futility_prune = false;
 
@@ -247,7 +243,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 			alpha = score;
 			if (is_pv) {
 				b.doMove(move);
-				if (!b.is3fold(2)) updatePV(b.ply - start_ply - 1, best_move);
+				if (!b.isRepetition(1)) updatePV(b.ply - start_ply - 1, best_move);
 				b.undoMove();
 			}
 			raised_alpha = true;
@@ -292,7 +288,7 @@ int Engine::quiesce(int alpha, int beta, bool is_pv) {
 	nodes++;
 	int search_ply = b.ply - start_ply;
 
-	if (b.is3fold(2) || b.half_move >= 100) return 0;
+	if (b.isRepetition(1) || b.half_move >= 100) return 0;
 
 	int stand_pat = b.getEval();
 	int best = stand_pat;
@@ -384,24 +380,25 @@ void Engine::printPV(int score) {
 		<< " nodes " << nodes
 		<< " nps " << static_cast<int>((1000.0 * nodes) / (1000.0 * (std::clock() - start_time) / CLOCKS_PER_SEC))
 		<< " pv ";
-	/*
-	std::vector<Move> m = b.getLastMoves(50);
-	for (int i = 0; i < 50; i++) {
-		b.undoMove();
+	
+	chess::Board test_b(b.start_fen);
+	for (auto m : b.state_stack) {
+		test_b.makeMove(chess::uci::uciToMove(test_b, m.move.toUci()));
 	}
-	for (int i = 0; i < 50; i++) {
-		b.doMove(m[i]);
-		std::cout << b.getHash() << std::endl;
-		b.printBoard();
-	}
-	*/
+	
 	int i = 0;
 	for (auto& move : pv) {
 		i++;
 		b.doMove(move);
+		test_b.makeMove(chess::uci::uciToMove(test_b, move.toUci()));
+
+		if (test_b.isRepetition(1) != b.isRepetition(1)) {
+			std::cout << "sssss";
+		}
 		//std::cout << b.getHash() << std::endl;
 		//b.printBoard();
-		if (b.is3fold(2)) {
+		if (b.isRepetition(1) || b.half_move >= 100) {
+			//std::cout << "whops";
 			break;
 		}
 

@@ -410,6 +410,7 @@ Side Board::getSide(int square) const {
 }
 
 void Board::loadFen(std::istringstream& fen_stream) {
+	
 	reset();
 	// Clear all bitboards and piece_board
 	for (int side = 0; side < 2; ++side)
@@ -420,7 +421,7 @@ void Board::loadFen(std::istringstream& fen_stream) {
 
 	std::string board_part, active_color, castling, ep, halfmove, fullmove;
 	fen_stream >> board_part >> active_color >> castling >> ep >> halfmove >> fullmove;
-
+	start_fen = std::string(board_part + " " + active_color + " " + castling + " " + ep + " " + halfmove + " " + fullmove);
 	// Parse board
 	int square = 56; // a8
 	for (char c : board_part) {
@@ -691,6 +692,7 @@ void Board::serializeMoves(Piece piece, StaticVector<Move>& moves, bool quiet) {
 	u64 attackers = boards[us][piece];
 	u64 mask = quiet ? ~all_occ : all_occ;
 	unsigned long from;
+	
 	while (attackers) {
 		BB::bitscan_reset(from, attackers);
 		u64 targets = 0;
@@ -704,7 +706,7 @@ void Board::serializeMoves(Piece piece, StaticVector<Move>& moves, bool quiet) {
 		unsigned long to;
 		while (targets) {
 			BB::bitscan_reset(to, targets);
-			moves.emplace_back({ u8(from), u8(to), piece, mailbox[to] });
+			moves.emplace_back({ static_cast<u8>(from), static_cast<u8>(to), piece, mailbox[to] });
 		}
 	}
 }
@@ -721,13 +723,9 @@ void Board::filterToLegal(StaticVector<Move>& moves) {
 				continue;
 			}
 		}
-		if (half_move >= 100) {
-			//moves.erase(moves.begin() + i);
-			continue;
-		}
 		
 		doMove(move);
-		if (is3fold(2)) {
+		if (isRepetition(2) || half_move >= 100) {
 			undoMove();
 			continue;
 		}
@@ -910,7 +908,7 @@ u64 Board::getHash() const {
 	return hash;
 }
 
-bool Board::is3fold(int n) {
+bool Board::isRepetition(int n) const {
 	if (state_stack.size() < half_move || state_stack.empty()) return false;
 	int counter = 0;
 	for (int i = 1; i <= std::min(int(state_stack.size()), half_move + 1); i++) {
@@ -1139,43 +1137,35 @@ int Board::evalUpdate()  {
 		u64 king_zone = king_safety(king_sq, side);
 		unsigned long at = 0;
 		int attack_val = 0;
-		int num_attackers = 0;
+
 
 		if (side == eBlack) {
-			u64 east_defenders = BB::get_pawn_attacks(eEast, eWhite, boards[eWhite][ePawn], boards[eWhite][0]);
-			u64 west_defenders = BB::get_pawn_attacks(eWest, eWhite, boards[eWhite][ePawn], boards[eWhite][0]);
-		} else {
-			u64 east_defenders = BB::get_pawn_attacks(eEast, eBlack, boards[eBlack][ePawn], boards[eBlack][0]);
-			u64 west_defenders = BB::get_pawn_attacks(eWest, eBlack, boards[eBlack][ePawn], boards[eBlack][0]);
 
+			attack_val += 2 * BB::popcnt(boards[eWhite][ePawn] & king_zone);
+		} else {
+			attack_val += 2 * BB::popcnt(boards[eBlack][ePawn] & king_zone);
 		}
-		
-		
-		
+
 		//static const int CountModifier[8] = { 0, 0, 63, 126, 96, 124, 124, 128 };
 
 		while (knights) {
 			BB::bitscan_reset(at, knights);
 			attack_val += 2 * BB::popcnt(BB::knight_attacks[at] & king_zone);
-			num_attackers++;
 		}
 		at = 0;
 		while (bishops) {
 			BB::bitscan_reset(at, bishops);
 			attack_val += 3 * BB::popcnt(BB::get_bishop_attacks(at, occ) & king_zone);
-			num_attackers++;
 		}
 		at = 0;
 		while (rooks) {
 			BB::bitscan_reset(at, rooks);
 			attack_val += 4 * BB::popcnt(BB::get_rook_attacks(at, occ) & king_zone);
-			num_attackers++;
 		}
 		at = 0;
 		while (queens) {
 			BB::bitscan_reset(at, queens);
 			attack_val += 5 * BB::popcnt(BB::get_queen_attacks(at, occ) & king_zone);
-			num_attackers++;
 		}
 
 		int danger = (SafetyTable[std::min(attack_val, 100)]);

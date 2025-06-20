@@ -99,18 +99,11 @@ public:
             {
                 /*
                  *
+                 * Warning; Illegal pv move c6b4 from fixed_king_safety
 
-                Warning; Illegal pv move c8e6 from passed_pawn
-Info; info score cp 52 depth 2 time 0 nodes 731 nps -2147483648 pv h4f3 c8e6
-Position; fen rnb1kbnr/p4pp1/2pp1q1p/4p3/2B1P3/5N1P/PPP2PP1/RNBQK2R w KQkq - 1 8
-Moves; b1c3 f6g6 f3h4 g6f6 h4f3 f6g6 f3h4 g6f6
-
-Warning; Illegal pv move g1f3 from old
-Info; info score cp -71 depth 6 time 1 nodes 7343 nps 7343000 pv a8a7 c7b5 a7a8 g1f3 h7h6 b5c7
-Position; fen rnb1k2r/1p1pbppp/p4n2/2pPp1B1/2P1P3/1PN5/1P3PPP/R3KBNR w KQkq - 2 9
-Moves; c3b5 e8g8 b5c7 a8a7 c7b5 a7a8 b5c7
-
-illegal uci: 'f4b4' in 8/5pk1/p1q3p1/P7/1P3P2/8/1KQ5/8 b - - 89 102
+Info; info score cp 70 depth 10 time 60 nodes 222058 nps 3700966 pv d3b3 b4c6 b3d3 c6b4 d3b3 b4c6 b3d3 c6b4 d3b3 b4c6
+Position; fen r2qk1nr/pp1bbppp/2np4/1B1Q4/4PB2/5N2/PPP2PPP/RN2K2R b KQkq - 5 8
+Moves; g8f6 d5d3 e8g8 b5c4 c6b4
             	*/
                 static std::vector<std::string> pos_list = {
                     "fen r1bqk1r1/1p1p1n2/p1n2pN1/2p1b2Q/2P1Pp2/1PN5/PB4PP/R4RK1 w q -",
@@ -123,7 +116,7 @@ illegal uci: 'f4b4' in 8/5pk1/p1q3p1/P7/1P3P2/8/1KQ5/8 b - - 89 102
 
                 //std::istringstream test("fen r2qkb1r/p1pp1ppp/1p2pn2/8/1nPP4/2N1PP2/PPQ2P1P/R1B1KB1R w KQkq - 1 8 moves c2d2 c7c5 d4d5 f8d6 f1g2 e6d5 a2a3 b4a6 c4d5 e8g8 e1g1 f8e8 f3f4 a6c7 e3e4 f6h5 e4e5 d6f8 d5d6 c7e6 g2a8 d8a8 d2d5 h5f4 d5a8 e8a8 f1e1 f4d3 e1e3 c5c4 c3b5 e6c5 c1d2 d3b2 d2b4 c5d3 b5c7 a8c8 b4c3 b2a4 c3d4 h7h5 e3e4 c8d8 a1a2 f7f5 e5f6 f8d6 e4e8 d8e8 c7e8 d6c5 d4c5 a4c5 f6g7 d3f4 f2f3 c4c3 a2c2 h5h4 g1h1 f4d5 e8d6 h4h3 d6f5 g8h7 c2c1 c5d3 c1c2 b6b5 c2e2 d5c7 e2c2 c7d5 c2e2");
                 chess::Board testb("r1bqk1nr/ppp2ppp/2nb4/3pp3/8/5P1P/PPPPP1PK/R1BQ1BNR b kq - 2 5 ");
-                std::istringstream test("fen r1bqk1nr/ppp2ppp/2nb4/3pp3/8/5P1P/PPPPP1PK/R1BQ1BNR b kq - 2 5");
+                std::istringstream test("fen r2qk1nr/pp1bbppp/2np4/1B1Q4/4PB2/5N2/PPP2PPP/RN2K2R b KQkq - 5 8");
                 /*
                 std::istringstream moves("c5d4 d1d4 g8f6 f1g2 b8c6 d4d2 c8f5 b1c3 e7e6 g1f3 f8b4 f3d4 c6d4 e3d4 e8g8 e1g1 a8c8 a2a3 b4c3 d4c3 h7h6 f2f3 a7a6 a1d1 f5g6 f1f2 g8h7 e2e4 d5e4 d2c1 d8c7 c3f6 e4f3 g2f3 g7f6 d1d4 c7b6 d4b4 b6f2 g1f2 c8c2 c1c2 g6c2 b4b7 h7g6 b7a7 c2d3 f2e3 f8d8 f3e2 d3b5 e2b5 a6b5 a7b7 d8d5 e3e2 f6f5 h2h4 d5e5 e2f3 e5d5 f3e2 d5e5 e2f3 e5c5 f3f4 g6f6 f4e3 c5e5 e3f3 e5c5 f3f4 c5d5 f4e3 d5e5 e3f3 e5c5 f3e3 h6h5 e3d4 c5d5 d4e3 d5e5 e3f3 e5d5 f3e3 f6g7 e3e2 d5e5 e2f3 g7g6 b7b8 e5d5 f3e3 d5e5 e3f3 e5c5 f3f4 c5d5 f4e3 g6g7 e3f4 g7f6 f4e3 d5c5 b8b7 c5d5 b2b4 f6g7 e3e2 g7g6 e2e3 g6f6 e3e2 f6g6 e2e3 g6g7 b7b6 g7f6 b6b7 f6g6 b7b8 d5e5 e3f3 g6g7 f3f2 e5d5 f2e3 d5e5 e3f3 g7g6 b8b7 g6f6 f3f2 e5d5 f2e2 f6g7 e2e3 d5e5 e3f2 g7f6 f2f3 f6g6 b7b8 g6g7 b8b7 e5d5 f3e3 g7g6 b7b8 g6f6");
                 std::string s;

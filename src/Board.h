@@ -115,6 +115,7 @@ public:
     EvalCounts eval_c;
     BoardParams params;
     std::vector<BoardState> state_stack;
+    std::string start_fen;
     bool us = eWhite;
     int ply = 0;
     u16 half_move = 0;
@@ -194,7 +195,7 @@ public:
     std::vector<Move> getLastMoves(int n_moves) const;
 
     u64 getHash() const;
-    bool is3fold(int n);
+    bool isRepetition(int n) const;
 
     [[nodiscard]] u64 calcHash() const;
 

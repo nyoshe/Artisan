@@ -494,7 +494,7 @@ namespace BB {
     }
 
     // retrieve attacks for rooks as bitboard
-    inline u64 get_rook_attacks(const int square, const u64 occupancy) {
+    inline u64 get_rook_attacks(const u64 square, const u64 occupancy) {
         // Compute magic index
         u64 magic_index = ((rook_blocker_mask[square] & occupancy) * rook_magics[square].factor) >> 52;
         // Retrieve from database
@@ -502,7 +502,7 @@ namespace BB {
     }
 
 	// retrieve attacks for bishops as bitboard
-    inline u64 get_bishop_attacks(const int square, const u64 occupancy) {
+    inline u64 get_bishop_attacks(const u64 square, const u64 occupancy) {
         // Compute magic index
         u64 magic_index = ((bishop_blocker_mask[square] & occupancy) * bishop_magics[square].factor) >> 55;
         // Retrieve from database
@@ -510,7 +510,7 @@ namespace BB {
     }
 
     // retrieve attacks for queen as bitboard
-    inline u64 get_queen_attacks(const int square, const u64 occupancy) {
+    inline u64 get_queen_attacks(const u64 square, const u64 occupancy) {
         return get_rook_attacks(square, occupancy) | get_bishop_attacks(square, occupancy);
     }
 
