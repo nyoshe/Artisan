@@ -120,6 +120,8 @@ public:
 	void calcTime();
 
 	void updatePV(int depth, Move move);
+	void updateHistoryBonus(Move move, int depth_left);
+	void updateHistoryMalus(Move move, int depth_left);
 };
 
 enum class MoveStage {

@@ -230,27 +230,34 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 		}
 
 		//search reductions
-		if (moves_searched >= (3 + !search_ply) && !in_check && depth_left >= 3) {
-			int R = static_cast<int>(1.0 + log_table[depth_left] * log_table[moves_searched] / 2.5);
+		if (moves_searched >= (3 + is_pv) && !in_check && depth_left >= 3) {
+			int R = 0;
+			//int R = static_cast<int>(1.0 + log_table[depth_left] * log_table[moves_searched] / 2.5);
 			//	- history_table[!b.us][move.from()][move.to()] / 9164;
 			//int R = 0;
-			R += !is_pv;
-			R -= is_pv;
-			
+
 			//	
-			/*
+			
 			if (move.captured() || move.promotion()) {
-				R = int(log_table[depth_left] * log_table[moves_searched] / 3.76);
+				R = static_cast<int>(log_table[depth_left] * log_table[moves_searched] / 2.5);
 			} else {
-				R = int(1.01 + log_table[depth_left] * log_table[moves_searched] / 3.0);
+				R = static_cast<int>(1.0 + log_table[depth_left] * log_table[moves_searched] / 2.5);
 			}
-			*/
+			
+
+			R += !is_pv;
+			//R -= is_pv;
+
+			R = std::max(R,0);
+
 			score = -alphaBeta(-alpha - 1, -alpha, depth_left - 1 - R, false);
 			if (score > alpha) {
 				int new_depth = depth_left;
 				//history_table[!b.us][move.from()][move.to()];
 				
 				new_depth += score > (alpha + 50);
+				//new_depth += history_table[b.us][move.from()][move.to()] / 16384;
+				new_depth -= score < (alpha + depth_left);
 				//research full depth if we fail high
 				score = -alphaBeta(-alpha - 1, -alpha, new_depth - 1, false);
 			}
@@ -265,8 +272,8 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 
 		}
 
+		
 		b.undoMove();
-
 		moves_searched++;
 		if (score > best) {
 			best = score;
@@ -276,9 +283,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 		if (score > alpha) {
 			alpha = score;
 			if (is_pv) {
-				b.doMove(move);
-				if (!b.isRepetition(1)) updatePV(b.ply - start_ply - 1, best_move);
-				b.undoMove();
+				updatePV(b.ply - start_ply, best_move);
 			}
 			raised_alpha = true;
 		}
@@ -290,17 +295,10 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool is_pv) {
 					killer_moves[search_ply][1] = killer_moves[search_ply][0];
 					killer_moves[search_ply][0] = move;
 				}
-				//int bonus = std::min(7 * depth_left * depth_left + 274 * depth_left - 182, 2048);
-				//int malus = -std::min(5 * depth_left * depth_left + 283 * depth_left + 169, 1024);
-				int bonus = std::min(280 * depth_left - 432, 2576);
-				int malus = -std::min(343 * depth_left + 161, 1239);
-				bonus = std::clamp(bonus, -16384, 16384);
-				malus = std::clamp(malus, -16384, 16384);
-				history_table[b.us][move.from()][move.to()] +=
-					bonus - history_table[b.us][move.from()][move.to()] * abs(bonus) / 16384;
+
+				updateHistoryBonus(move, depth_left);
 				for (auto& quiet : seen_quiets[search_ply]) {
-					history_table[b.us][quiet.from()][quiet.to()] +=
-						malus - history_table[b.us][quiet.from()][quiet.to()] * abs(malus) / 16384;
+					updateHistoryMalus(quiet, depth_left);
 				}
 			}
 
@@ -351,7 +349,8 @@ int Engine::quiesce(int alpha, int beta, bool is_pv) {
 	b.filterToLegal(move_vec[search_ply]);
 
 	// Check for #M
-	if (!move_vec[search_ply].size()) {
+	if (move_vec[search_ply].empty()) {
+		move_vec[search_ply].clear();
 		b.genPseudoLegalMoves(move_vec[search_ply]);
 		b.filterToLegal(move_vec[search_ply]);
 		if (move_vec[search_ply].empty() && b.isCheck()) {
@@ -518,6 +517,24 @@ void Engine::updatePV(int depth, Move move) {
 	}
 	pv_length[depth] = pv_length[depth + 1] + 1;
 }
+
+//int bonus = std::min(7 * depth_left * depth_left + 274 * depth_left - 182, 2048);
+//int malus = -std::min(5 * depth_left * depth_left + 283 * depth_left + 169, 1024);
+
+void Engine::updateHistoryBonus(Move move, int depth_left) {
+	int bonus = std::min(280 * depth_left - 432, 2576);
+	bonus = std::clamp(bonus, -16384, 16384);
+	history_table[b.us][move.from()][move.to()] +=
+		bonus - history_table[b.us][move.from()][move.to()] * abs(bonus) / 16384;
+}
+
+void Engine::updateHistoryMalus(Move move, int depth_left) {
+	int malus = -std::min(343 * depth_left + 161, 1239);
+	malus = std::clamp(malus, -16384, 16384);
+	history_table[b.us][move.from()][move.to()] +=
+		malus - history_table[b.us][move.from()][move.to()] * abs(malus) / 16384;
+}
+
 
 std::vector<PerfT> Engine::doPerftSearch(int depth) {
 	perf_values.clear();
