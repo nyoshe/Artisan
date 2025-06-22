@@ -73,8 +73,11 @@ class Engine {
 
 public:
 	std::array<std::array<std::array<int, 64>, 64>, 2> history_table;
+	std::array<std::array < std::array<std::array<int, 64>, 7>, 7>, 2> capture_history;
+
 	int hash_hits = 0;
 	std::array<StaticVector<Move>, 64> seen_quiets;
+	std::array<StaticVector<Move>, 64> seen_noisies;
 	std::array<std::array<Move, 2>, MAX_PLY> killer_moves;
 	int start_ply = 0;
 	Board b;
@@ -176,19 +179,31 @@ public:
 			*/
 			stage = MoveStage::captures;
 			[[fallthrough]];
-		case MoveStage::captures:
-			if (moves.end() != std::find_if(moves.begin(), moves.end(),
-				[](const auto& m) { return m.captured() || m.promotion(); })) {
-				auto mvv_lva = [](const auto& a, const auto& b) {
-					return piece_vals[a.promotion()] * 8 + piece_vals[a.captured()] * 8 - piece_vals[a.piece()] <
-						   piece_vals[b.promotion()] * 8 + piece_vals[b.captured()] * 8 - piece_vals[b.piece()];
-					};
-				auto pos_best = std::ranges::max_element(moves.begin(), moves.end(), mvv_lva);
-				out = *pos_best;
-				*pos_best = moves.back();
+		case MoveStage::captures: {
+			int max = -100000;
+			int index = 0;
+			
+			for (int i = 0; i < moves.size(); i++) {
+				if (moves[i].captured() || moves[i].promotion()) {
+					//piece_vals[moves[i].promotion()] * 256 +
+
+					int val = piece_vals[moves[i].promotion()] + (moves[i].captured() ? piece_vals[moves[i].captured()] * 8 +
+						e.capture_history[b.us][moves[i].piece()][moves[i].captured()][moves[i].to()] : 0);
+					if (val > max) {
+						max = val;
+						index = i;
+					}
+				}
+
+			}
+			if (max != -100000) {
+				out = moves[index];
+				moves[index] = moves.back();
 				moves.pop_back();
 				return out;
+
 			}
+		}
 
 			stage = MoveStage::killer;
 			[[fallthrough]];
@@ -206,7 +221,7 @@ public:
 
 			stage = MoveStage::history;
 			[[fallthrough]];
-		case MoveStage::history:
+		case MoveStage::history: {
 			int max = -100000;
 			int index = 0;
 
@@ -222,8 +237,8 @@ public:
 			moves.pop_back();
 			return out;
 			break;
+			}
 		}
-
 		return Move();
 	}
 };

@@ -215,6 +215,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 	MoveGen move_gen;
 	bool raised_alpha = false;
 	seen_quiets[search_ply].clear();
+	seen_noisies[search_ply].clear();
 	while (const Move move = move_gen.getNext(*this, b, move_vec[search_ply])) {
 		if (checkTime()) return best;
 		moves_searched++;
@@ -223,6 +224,8 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 		bool is_quiet = !(move.captured() || move.promotion());
 		if (is_quiet) {
 			seen_quiets[search_ply].emplace_back(move);
+		} else {
+			seen_noisies[search_ply].emplace_back(move);
 		}
 		
 
@@ -237,15 +240,15 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 				continue;
 			}
 			/*
-			if (moves_searched > 2 + (depth_left * depth_left)) {
+			if (moves_searched > 2 + (depth_left * depth_left) && depth_left <= 4) {
 				b.undoMove();
 				continue;
 			}
 			*/
 			//history pruning
 			/*
-			if (depth_left < 4 && history_table[b.us][move.from()][move.to()] < -1024 * depth_left) {
-
+			if (moves_searched > 2 && depth_left < 4 && history_table[b.us][move.from()][move.to()] < -1024 * depth_left) {
+				b.undoMove();
 				continue;
 			}
 			*/
@@ -256,8 +259,8 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 		if (moves_searched > 3 + is_pv && !b.isCheck() && depth_left >= 3) {
 			int R = 0;
 			
-			if (move.captured() || move.promotion()) {
-				R = static_cast<int>(1.0 + log_table[depth_left] * log_table[moves_searched] / 2.5);
+			if (!is_quiet) {
+				R = static_cast<int>(0.75 + log_table[depth_left] * log_table[moves_searched] / 3.5);
 			} else {
 				R = static_cast<int>(2.0 + log_table[depth_left] * log_table[moves_searched] / 2.5);
 			}
@@ -265,9 +268,9 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 			//R -= history_table[!b.us][move.from()][move.to()] / 8870;
 			R += !is_pv;
 			//R -= is_pv;
-			//R += 2 * cut_node;
+			//R += cut_node;
 
-			//R += tt_entry ? (tt_entry.best_move.captured() != 0) : 0;
+			//R += tt_entry ? (tt_entry.best_move.captured() || tt_entry.best_move.promotion()) : 0;
 
 			R = std::max(R,1);
 
@@ -277,8 +280,8 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 				
 				int new_depth = depth_left - 1;
 				//history_table[!b.us][move.from()][move.to()];
-				new_depth += score > alpha + 50;
-				new_depth -= score < (alpha + depth_left);
+				new_depth += score > best + 50;
+				new_depth -= score < (best + depth_left);
 				//new_depth = std::min(new_depth, depth_left);
 				//research full depth if we fail high
 				
@@ -311,19 +314,31 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 		}
 
 		if (score >= beta) {
-			if (!move.captured()) {
+			if (is_quiet) {
 				// Store as killer move
 				if (move != killer_moves[search_ply][1]) {
 					killer_moves[search_ply][1] = killer_moves[search_ply][0];
 					killer_moves[search_ply][0] = move;
 				}
-
 				updateHistoryBonus(move, depth_left);
 				for (auto& quiet : seen_quiets[search_ply]) {
 					updateHistoryMalus(quiet, depth_left);
 				}
-			}
 
+			} else {
+				//int bonus = std::min(7 * depth_left * depth_left + 274 * depth_left - 182, 2048);
+				int bonus = std::min(280 * depth_left - 432, 2576);
+				bonus = std::clamp(bonus, -16384, 16384);
+				capture_history[b.us][move.piece()][move.captured()][move.to()] +=
+					bonus - capture_history[b.us][move.piece()][move.captured()][move.to()] * abs(bonus) / 16384;
+			}
+			//int malus = -std::min(5 * depth_left * depth_left + 283 * depth_left + 169, 1024);
+			int malus = -std::min(343 * depth_left - 161, 1239);
+			for (auto& capture : seen_noisies[search_ply]) {
+				malus = std::clamp(malus, -16384, 16384);
+				capture_history[b.us][capture.piece()][capture.captured()][capture.to()] +=
+					malus - capture_history[b.us][capture.piece()][capture.captured()][capture.to()] * abs(malus) / 16384;
+			}
 			storeTTEntry(b.getHash(), best, TType::BETA_CUT, depth_left, best_move);
 			return best;
 		}
@@ -546,8 +561,7 @@ void Engine::updatePV(int depth, Move move) {
 	pv_length[depth] = pv_length[depth + 1] + 1;
 }
 
-//int bonus = std::min(7 * depth_left * depth_left + 274 * depth_left - 182, 2048);
-//int malus = -std::min(5 * depth_left * depth_left + 283 * depth_left + 169, 1024);
+
 
 void Engine::updateHistoryBonus(Move move, int depth_left) {
 	int bonus = std::min(280 * depth_left - 432, 2576);
@@ -557,7 +571,7 @@ void Engine::updateHistoryBonus(Move move, int depth_left) {
 }
 
 void Engine::updateHistoryMalus(Move move, int depth_left) {
-	int malus = -std::min(343 * depth_left + 161, 1239);
+	int malus = -std::min(343 * depth_left - 161, 1239);
 	malus = std::clamp(malus, -16384, 16384);
 	history_table[b.us][move.from()][move.to()] +=
 		malus - history_table[b.us][move.from()][move.to()] * abs(malus) / 16384;
