@@ -92,7 +92,7 @@ Move Engine::search(int depth) {
 		// Keep searching until we get a score within our window
 		while (true) {
 			score = alphaBeta(alpha, beta, max_depth, true);
-			if (checkTime()) break;
+			if (checkTime(true)) break;
 			if (score > alpha && score < beta) break;
 			if (score <= alpha) {
 				alpha = std::max(-100000, alpha - delta);
@@ -105,7 +105,7 @@ Move Engine::search(int depth) {
 			if (alpha <= -100000 && beta >= 100000) break;
 		}
 
-		if (checkTime()) {
+		if (checkTime(true)) {
 			//allocate extra time if we just had a best move change
 			
 			if (best_move != pv_table[0][0] && !add_time) {
@@ -150,7 +150,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 	}
 
 	pv_length[search_ply] = 0;
-	if (checkTime()) return b.getEval();
+	if (checkTime(false)) return b.getEval();
 	bool in_check = b.isCheck();
 	
 	if (depth_left <= 0 && in_check) { depth_left = 1; }
@@ -217,7 +217,6 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 	seen_quiets[search_ply].clear();
 	seen_noisies[search_ply].clear();
 	while (const Move move = move_gen.getNext(*this, b, move_vec[search_ply])) {
-		if (checkTime()) return best;
 		moves_searched++;
 		int score = 0;
 
@@ -246,12 +245,11 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 			}
 			*/
 			//history pruning
-			/*
-			if (moves_searched > 2 && depth_left < 4 && history_table[b.us][move.from()][move.to()] < -1024 * depth_left) {
+			
+			if (raised_alpha && moves_searched > 4 && depth_left < 4 && history_table[!b.us][move.from()][move.to()] < -1024 * depth_left) {
 				b.undoMove();
-				continue;
+				break;
 			}
-			*/
 		}
 		
 
@@ -260,7 +258,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 			int R = 0;
 			
 			if (!is_quiet) {
-				R = static_cast<int>(0.75 + log_table[depth_left] * log_table[moves_searched] / 3.5);
+				R = static_cast<int>(0.5 + log_table[depth_left] * log_table[moves_searched] / 3.5);
 			} else {
 				R = static_cast<int>(2.0 + log_table[depth_left] * log_table[moves_searched] / 2.5);
 			}
@@ -280,7 +278,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 				
 				int new_depth = depth_left - 1;
 				//history_table[!b.us][move.from()][move.to()];
-				new_depth += score > best + 50;
+				//new_depth += score > best + 50;
 				new_depth -= score < (best + depth_left);
 				//new_depth = std::min(new_depth, depth_left);
 				//research full depth if we fail high
@@ -298,7 +296,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 		}
 		
 		b.undoMove();
-		if (checkTime()) return best;
+		if (checkTime(false)) return best;
 
 		if (score > best) {
 			best = score;
@@ -405,7 +403,7 @@ int Engine::quiesce(int alpha, int beta, bool is_pv) {
 	Move move = move_gen.getNext(*this, b, move_vec[search_ply]);
 	while (move.raw()) {
 		if (move.captured() == eKing) return 99999 - (b.ply - start_ply);
-		if (checkTime()) return best;
+		if (checkTime(false)) return best;
 
 		b.doMove(move);
 		int score = -quiesce(-beta, -alpha, is_pv);
@@ -515,17 +513,31 @@ void Engine::storeTTEntry(u64 hash_key, int score, TType type, u8 depth_left, Mo
 	}
 }
 
+TTEntry Engine::probeTT(u64 hash_key) const {
+	u64 index = static_cast<std::uint64_t>((static_cast<unsigned __int128>(hash_key) * static_cast<unsigned __int128>(hash_size)) >> 64);
+	if (tt[index].hash == (hash_key & 0xFFFFFFFFull)) {
+		return tt[index];
+	}
+	return TTEntry();
+}
 
-bool Engine::checkTime() {
+
+bool Engine::checkTime(bool strict) {
 	static u32 counter = 0;
+	if (time_over) return true;
 	counter++;
-
-		if ((std::clock() - start_time) > max_time) return true;
-
+	if (strict || (counter & 0x80)) {
+		if ((std::clock() - start_time) > max_time) {
+			time_over = true;
+			return true;
+		}
+		counter = 0;
+	}
 	return false;
 }
 
 void Engine::calcTime() {
+	time_over = false;
 	if (tc.movetime) {
 		max_time = tc.movetime;
 		return;
@@ -548,8 +560,6 @@ void Engine::calcTime() {
 	} else {
 		max_time = (total_time * factor) + inc * 0.80;
 	}
-
-	
 }
 
 void Engine::updatePV(int depth, Move move) {
@@ -560,8 +570,6 @@ void Engine::updatePV(int depth, Move move) {
 	}
 	pv_length[depth] = pv_length[depth + 1] + 1;
 }
-
-
 
 void Engine::updateHistoryBonus(Move move, int depth_left) {
 	int bonus = std::min(280 * depth_left - 432, 2576);
@@ -577,7 +585,6 @@ void Engine::updateHistoryMalus(Move move, int depth_left) {
 		malus - history_table[b.us][move.from()][move.to()] * abs(malus) / 16384;
 }
 
-
 std::vector<PerfT> Engine::doPerftSearch(int depth) {
 	perf_values.clear();
 	perf_values.resize(depth);
@@ -586,7 +593,6 @@ std::vector<PerfT> Engine::doPerftSearch(int depth) {
 	perftSearch(depth);
 	// Returns elapsed time in milliseconds
 	std::cout << "search time: " << static_cast<int>(1000.0 * (std::clock() - start_time) / CLOCKS_PER_SEC) << "ms\n\n";
-
 	return perf_values;
 }
 

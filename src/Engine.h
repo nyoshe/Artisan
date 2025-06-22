@@ -110,16 +110,10 @@ public:
 	void printPV(int score);
 
 	void storeTTEntry(u64 hash_key, int score, TType type, u8 depth_left, Move best);
+	TTEntry probeTT(u64 hash_key) const;
 
-	TTEntry probeTT(u64 hash_key) const {
-		u64 index = static_cast<std::uint64_t>((static_cast<unsigned __int128>(hash_key) * static_cast<unsigned __int128>(hash_size)) >> 64);
-		if (tt[index].hash == (hash_key & 0xFFFFFFFFull)) {
-			return tt[index];
-		}
-		return TTEntry();
-	}
-
-	bool checkTime();
+	bool time_over = false;
+	bool checkTime(bool strict);
 	void calcTime();
 
 	void updatePV(int depth, Move move);
