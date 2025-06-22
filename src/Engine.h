@@ -126,6 +126,7 @@ public:
 
 enum class MoveStage {
 	ttMove,
+	promotion,
 	captures,
 	killer,
 	history
@@ -159,14 +160,28 @@ public:
 					return out;
 				}
 			}
+			/*
+			stage = MoveStage::promotion;
+			[[fallthrough]];
+		case MoveStage::promotion:
+			if (moves.end() != std::find_if(moves.begin(), moves.end(),
+				[](const auto& m) { return m.promotion(); })) {
+				auto promo = [](const auto& a, const auto& b) { return piece_vals[a.promotion()]; };
+				auto pos_best = std::ranges::max_element(moves.begin(), moves.end(), promo);
+				out = *pos_best;
+				*pos_best = moves.back();
+				moves.pop_back();
+				return out;
+			}
+			*/
 			stage = MoveStage::captures;
 			[[fallthrough]];
 		case MoveStage::captures:
 			if (moves.end() != std::find_if(moves.begin(), moves.end(),
-				[](const auto& m) { return m.captured(); })) {
+				[](const auto& m) { return m.captured() || m.promotion(); })) {
 				auto mvv_lva = [](const auto& a, const auto& b) {
-					return piece_vals[a.captured()] * 10 - piece_vals[a.piece()] < piece_vals[b.captured()] * 10 -
-						piece_vals[b.piece()];
+					return piece_vals[a.promotion()] * 8 + piece_vals[a.captured()] * 8 - piece_vals[a.piece()] <
+						   piece_vals[b.promotion()] * 8 + piece_vals[b.captured()] * 8 - piece_vals[b.piece()];
 					};
 				auto pos_best = std::ranges::max_element(moves.begin(), moves.end(), mvv_lva);
 				out = *pos_best;
