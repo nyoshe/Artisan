@@ -38,24 +38,42 @@ struct TimeControl {
 	int binc = 0;
 	int movetime = 0;
 };
-
+struct UciOptions {
+	u64 hash_size = 16;
+	bool debug = false;
+};
 
 
 struct SearchStack {
-	Move move;
+	int eval = 0;
+	StaticVector<Move> moves;
+	StaticVector<Move> seen_quiets;
+	StaticVector<Move> seen_noisies;
+	std::array<Move, 2> killers;
+	void clear() {
+		moves.clear();
+		seen_quiets.clear();
+		seen_noisies.clear();
+		killers[0] = Move();
+		killers[1] = Move();
+		eval = 0;
+	}
 };
 
 class Engine {
+	UciOptions uci_options;
+
+	int hash_count = 0;
 	int hash_miss;
 	//Move best_move;
 	static constexpr int MAX_PLY = 64;
-	static constexpr u64 hash_size = 32e6 / sizeof(TTEntry);
 	std::array<std::array<Move, MAX_PLY>, MAX_PLY> pv_table;
 	std::array<int, MAX_PLY> pv_length;
 	std::vector<TTEntry> tt;
 
 	// Engine state variables
-	u16 max_depth = 0;
+	int max_depth = 0;
+	int sel_depth = 0;
 	int nodes = 0;
 	Move root_best;
 	Move expected_response;
@@ -68,23 +86,24 @@ class Engine {
 
 
 	void perftSearch(int depth);
-	int alphaBeta(int alpha, int beta, int depth_left, bool is_pv);
-	int quiesce(int alpha, int beta, bool is_pv);
+	int alphaBeta(int alpha, int beta, int depth_left, bool is_pv, SearchStack* ss);
+	int quiesce(int alpha, int beta, bool is_pv, SearchStack* ss);
 
 public:
+	SearchStack search_stack[MAX_PLY];
 	std::array<std::array<std::array<int, 64>, 64>, 2> history_table;
 	std::array<std::array < std::array<std::array<int, 64>, 7>, 7>, 2> capture_history;
 
 	int hash_hits = 0;
-	std::array<StaticVector<Move>, 64> seen_quiets;
-	std::array<StaticVector<Move>, 64> seen_noisies;
-	std::array<std::array<Move, 2>, MAX_PLY> killer_moves;
+
 	int start_ply = 0;
 	Board b;
 	TimeControl tc;
 
-	Engine() {
-		tt.resize(hash_size);
+	Engine(UciOptions options) {
+		uci_options = options;
+		tt.resize((uci_options.hash_size * 1024 * 1024) / sizeof(TTEntry));
+		
 		for (auto& i : history_table) {
 			for (auto& j : i) {
 				for (auto& k : j) {
@@ -94,15 +113,13 @@ public:
 		}
 	}
 
-	std::array<StaticVector<Move>, 64> move_vec;
-
-
 	std::vector<PerfT> doPerftSearch(int depth);
 	std::vector<PerfT> doPerftSearch(std::string position, int depth);
 
 	void setBoardFEN(std::istringstream& fen);
 	void setBoardUCI(std::istringstream& uci);
 
+	void initSearch();
 	Move search(int depth);
 	std::vector<Move> getPrincipalVariation() const;
 
@@ -135,9 +152,9 @@ class MoveGen {
 	bool init = false;
 
 public:
-	Move getNext(Engine& e, Board& b, StaticVector<Move>& moves) {
+	Move getNext(Engine& e, Board& b, SearchStack* ss) {
 
-		if (moves.empty()) {
+		if (ss->moves.empty()) {
 			return Move(0, 0);
 		}
 		Move out;
@@ -146,12 +163,12 @@ public:
 		case MoveStage::ttMove:
 			entry = e.probeTT(e.b.getHash());
 			if (entry && entry.type != TType::FAIL_LOW) {
-				auto pos_best = std::find(moves.begin(), moves.end(), entry.best_move);
-				if (pos_best != moves.end()) {
+				auto pos_best = std::find(ss->moves.begin(), ss->moves.end(), entry.best_move);
+				if (pos_best != ss->moves.end()) {
 					out = *pos_best;
 					e.hash_hits++;
-					*pos_best = moves.back();
-					moves.pop_back();
+					*pos_best = ss->moves.back();
+					ss->moves.pop_back();
 
 					stage = MoveStage::captures;
 					return out;
@@ -177,12 +194,12 @@ public:
 			int max = -100000;
 			int index = 0;
 			
-			for (int i = 0; i < moves.size(); i++) {
-				if (moves[i].captured() || moves[i].promotion()) {
+			for (int i = 0; i < ss->moves.size(); i++) {
+				if (ss->moves[i].captured() || ss->moves[i].promotion()) {
 					//piece_vals[moves[i].promotion()] * 256 +
-
-					int val = piece_vals[moves[i].promotion()] + (moves[i].captured() ? piece_vals[moves[i].captured()] * 8 +
-						e.capture_history[b.us][moves[i].piece()][moves[i].captured()][moves[i].to()] : 0);
+					Move m = ss->moves[i];
+					int val = piece_vals[m.promotion()] + (m.captured() ? piece_vals[m.captured()] * 8 +
+						e.capture_history[b.us][m.piece()][m.captured()][m.to()] : 0);
 					if (val > max) {
 						max = val;
 						index = i;
@@ -191,9 +208,9 @@ public:
 
 			}
 			if (max != -100000) {
-				out = moves[index];
-				moves[index] = moves.back();
-				moves.pop_back();
+				out = ss->moves[index];
+				ss->moves[index] = ss->moves.back();
+				ss->moves.pop_back();
 				return out;
 
 			}
@@ -203,12 +220,12 @@ public:
 			[[fallthrough]];
 		case MoveStage::killer:
 			if ((b.ply - e.start_ply > 2) && killer_slot < 2) {
-				Move killer = e.killer_moves[b.ply - e.start_ply - 2][killer_slot++];
-				auto pos_best = std::find(moves.begin(), moves.end(), killer);
-				if (killer && pos_best != moves.end()) {
+				Move killer = (ss - 2)->killers[killer_slot++];
+				auto pos_best = std::find(ss->moves.begin(), ss->moves.end(), killer);
+				if (killer && pos_best != ss->moves.end()) {
 					out = *pos_best;
-					*pos_best = moves.back();
-					moves.pop_back();
+					*pos_best = ss->moves.back();
+					ss->moves.pop_back();
 					return out;
 				}
 			}
@@ -219,16 +236,16 @@ public:
 			int max = -100000;
 			int index = 0;
 
-			for (int i = 0; i < moves.size(); i++) {
-				int val = e.history_table[b.us][moves[i].from()][moves[i].to()];
+			for (int i = 0; i < ss->moves.size(); i++) {
+				int val = e.history_table[b.us][ss->moves[i].from()][ss->moves[i].to()];
 				if (val > max) {
 					max = val;
 					index = i;
 				}
 			}
-			out = moves[index];
-			moves[index] = moves.back();
-			moves.pop_back();
+			out = ss->moves[index];
+			ss->moves[index] = ss->moves.back();
+			ss->moves.pop_back();
 			return out;
 			break;
 			}

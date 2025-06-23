@@ -40,7 +40,7 @@ void Engine::perftSearch(int d) {
 	}
 }
 
-Move Engine::search(int depth) {
+void Engine::initSearch() {
 	for (auto& i : pv_table) {
 		for (auto& j : i) {
 			j = Move();
@@ -51,39 +51,41 @@ Move Engine::search(int depth) {
 		pv_length[i] = 0;
 	}
 
+	for (int i = 0; i < MAX_PLY; i++) {
+		search_stack[i] = SearchStack();
+	}
+
+	sel_depth = 0;
 	nodes = 0;
 	start_time = std::clock();
 	start_ply = b.ply;
+	hash_count = 0;
+}
 
-	move_vec[0].clear();
-	b.genPseudoLegalMoves(move_vec[0]);
-	b.filterToLegal(move_vec[0]);
+Move Engine::search(int depth) {
+	
+	initSearch();
+	b.printBoard();
+	b.genPseudoLegalMoves(search_stack->moves);
+	b.filterToLegal(search_stack->moves);
 	
 	calcTime();
-	
-	std::vector<std::pair<int, Move>> sorted_moves;
-	for (auto move : move_vec[0]) {
-		sorted_moves.push_back({-100000, move});
-	}
 
 	max_depth = 2;
-	int score = alphaBeta(-100000, 100000, max_depth, false);
+	int score = alphaBeta(-100000, 100000, max_depth, false, search_stack);
 
-	
-	if (move_vec[0].size() == 1) {
+	if (search_stack->moves.size() == 1) {
 		printPV(score);
-		return move_vec[0][0];
+		return search_stack->moves[0];
 	}
-	
-	//position fen rnbq1rk1/ppppbppp/5n2/3P4/2P5/2NB4/PP3PPP/R1BQK1NR w KQ - 0 8 moves g1f3 d7d6 c1f4 b8a6 e1g1 c7c6 a2a3 a6c5 d3c2 a7a5 f1e1 c6d5 c4d5 h7h6 h2h3 c8d7 f3d4 a5a4 f4g3 f8e8 a1b1 d8a5 d4f5 d7f5 c2f5 a8d8 e1e3 a5a6 d1f1 a6a8 b1e1 e7f8 f1c4 e8e3 e1e3 b7b5 c4d4 a8b7 f5c2 f6h5 d4b4 h5f6 g3h4 g7g5 h4g3 f6d5 c3d5 b7d5 b4b5 d5d2 c2f5 f8g7 e3e8 d8e8 b5e8 g7f8 f5g4 d2d4 g4h5 d4d5 g1h2 d5e6 e8a8 f7f5 f2f3 c5d3 a8a7 d3b2 f3f4 d6d5 f4g5 h6g5 a7b8 f5f4 g3f4 g5f4 b8b2 e6e1 h5f3 e1g3 h2h1 g3e1 h1h2 e1g3 h2h1 g3e1
+
 	Move best_move = pv_table[0][0];
-	if (!best_move) {
-		best_move = move_vec[0].front();
-	}
+	if (!best_move) best_move = search_stack->moves.front();
 	bool add_time = false;
 
 	for (max_depth = 2; max_depth < MAX_PLY; max_depth++) {
 		// Keep searching until we get a score within our window
+		search_stack->clear();
 		pv_length[0] = 0;
 		int delta = 9 + score * score / 16384;
 		int alpha = score - delta;
@@ -91,7 +93,7 @@ Move Engine::search(int depth) {
 
 		// Keep searching until we get a score within our window
 		while (true) {
-			score = alphaBeta(alpha, beta, max_depth, true);
+			score = alphaBeta(alpha, beta, max_depth, true, search_stack);
 			if (checkTime(true)) break;
 			if (score > alpha && score < beta) break;
 			if (score <= alpha) {
@@ -140,10 +142,13 @@ Move Engine::search(int depth) {
 }
 
 
-int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
+int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, SearchStack* ss) {
+	ss->clear();
 	const int search_ply = b.ply - start_ply;
+	sel_depth = std::max(search_ply, sel_depth);
 	const bool is_pv = alpha != beta - 1;
 	bool is_root = search_ply == 0;
+
 	nodes++;
 	if (b.isRepetition(is_root ? 2 : 1) || b.half_move >= 100) {
 		return 0;
@@ -155,13 +160,13 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 	
 	if (depth_left <= 0 && in_check) { depth_left = 1; }
 	if (search_ply >= MAX_PLY - 1) return b.getEval();
-	if (depth_left <= 0) return quiesce(alpha, beta, is_pv);
+	if (depth_left <= 0) return quiesce(alpha, beta, is_pv, ss + 1);
 
 	bool futility_prune = false;
 
 	TTEntry tt_entry = probeTT(b.getHash());
 
-	int eval;
+	ss->eval = b.getEval();
 	//pruning
 	if (!is_pv && !in_check && !is_root) {
 
@@ -171,27 +176,26 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 			if (tt_entry.type == TType::FAIL_LOW && tt_entry.eval <= alpha) return tt_entry.eval;
 		}
 
-		eval = b.getEval();
 
 		//null move pruning, do not NMP in late game
-		if (depth_left >= 3 && (eval) > beta && b.getPhase() <= 16) {
+		if (depth_left >= 3 && (ss->eval) > beta && b.getPhase() <= 16) {
 			b.doMove(Move(0, 0));
-			const int R = 4 + depth_left / 4 + std::min(3, (eval - beta) / 200);
-			int null_score = -alphaBeta(-beta, -beta + 1, depth_left - R, !cut_node);
+			const int R = 4 + depth_left / 4 + std::min(3, (ss->eval - beta) / 200);
+			int null_score = -alphaBeta(-beta, -beta + 1, depth_left - R, !cut_node, ss + 1);
 			b.undoMove();
 			//don't return wins
 			if (null_score >= beta && null_score < 30000 && null_score > -30000) return null_score;
 		}
 
 		//reverse futility pruning
-		if (depth_left <= 6 && eval >= beta + 80 * depth_left) {
-			return eval;
+		if (depth_left <= 6 && ss->eval >= beta + 80 * depth_left) {
+			return ss->eval;
 		}
 
 		// Futility margins increasing by depth
 		static constexpr int futility_margins[4] = { 0, 100, 300, 500 };
 		if (depth_left <= 3) {
-			int futility_margin = eval + futility_margins[depth_left];
+			int futility_margin = ss->eval + futility_margins[depth_left];
 			futility_prune = (futility_margin <= alpha);
 		}
 	}
@@ -199,32 +203,29 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 	int best = -100000;
 	Move best_move;
 
-	move_vec[search_ply].clear();
-	b.genPseudoLegalMoves(move_vec[search_ply]);
-	b.filterToLegal(move_vec[search_ply]);
+	b.genPseudoLegalMoves(ss->moves);
+	b.filterToLegal(ss->moves);
 
 	// Check for #M
-	if (move_vec[search_ply].empty() && in_check) {
+	if (ss->moves.empty() && in_check) {
 		return -99999 + b.ply - start_ply;
 	}
-	if (move_vec[search_ply].empty()) {
+	if (ss->moves.empty()) {
 		return 0;
 	}
 
 	int moves_searched = 0;
 	MoveGen move_gen;
 	bool raised_alpha = false;
-	seen_quiets[search_ply].clear();
-	seen_noisies[search_ply].clear();
-	while (const Move move = move_gen.getNext(*this, b, move_vec[search_ply])) {
+	while (const Move move = move_gen.getNext(*this, b, ss)) {
 		moves_searched++;
 		int score = 0;
 
 		bool is_quiet = !(move.captured() || move.promotion());
 		if (is_quiet) {
-			seen_quiets[search_ply].emplace_back(move);
+			ss->seen_quiets.emplace_back(move);
 		} else {
-			seen_noisies[search_ply].emplace_back(move);
+			ss->seen_noisies.emplace_back(move);
 		}
 		
 
@@ -273,7 +274,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 			R = std::max(R,1);
 
 			int lmr_depth = std::clamp(depth_left - R, 1, depth_left);
-			score = -alphaBeta(-alpha - 1, -alpha, lmr_depth, true);
+			score = -alphaBeta(-alpha - 1, -alpha, lmr_depth, true, ss + 1);
 			if (score > alpha) {
 				
 				int new_depth = depth_left - 1;
@@ -283,16 +284,16 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 				//new_depth = std::min(new_depth, depth_left);
 				//research full depth if we fail high
 				
-				score = -alphaBeta(-alpha - 1, -alpha, new_depth,  !cut_node);
+				score = -alphaBeta(-alpha - 1, -alpha, new_depth,  !cut_node, ss + 1);
 			}
 		}
 
 		else if (!is_pv || moves_searched > 1) {
-			score = -alphaBeta(-alpha - 1, -alpha, depth_left - 1, !cut_node);
+			score = -alphaBeta(-alpha - 1, -alpha, depth_left - 1, !cut_node, ss + 1);
 		}
 
 		if (is_pv && (moves_searched == 1 || score > alpha)) {
-			score = -alphaBeta(-beta, -alpha, depth_left - 1, false);
+			score = -alphaBeta(-beta, -alpha, depth_left - 1, false, ss + 1);
 		}
 		
 		b.undoMove();
@@ -314,12 +315,12 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 		if (score >= beta) {
 			if (is_quiet) {
 				// Store as killer move
-				if (move != killer_moves[search_ply][1]) {
-					killer_moves[search_ply][1] = killer_moves[search_ply][0];
-					killer_moves[search_ply][0] = move;
+				if (move != ss->killers[1]) {
+					ss->killers[1] = ss->killers[0];
+					ss->killers[0] = move;
 				}
 				updateHistoryBonus(move, depth_left);
-				for (auto& quiet : seen_quiets[search_ply]) {
+				for (auto& quiet : ss->seen_quiets) {
 					updateHistoryMalus(quiet, depth_left);
 				}
 
@@ -332,7 +333,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 			}
 			//int malus = -std::min(5 * depth_left * depth_left + 283 * depth_left + 169, 1024);
 			int malus = -std::min(343 * depth_left - 161, 1239);
-			for (auto& capture : seen_noisies[search_ply]) {
+			for (auto& capture : ss->seen_noisies) {
 				malus = std::clamp(malus, -16384, 16384);
 				capture_history[b.us][capture.piece()][capture.captured()][capture.to()] +=
 					malus - capture_history[b.us][capture.piece()][capture.captured()][capture.to()] * abs(malus) / 16384;
@@ -342,6 +343,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 		}
 		
 	}
+
 	if (raised_alpha) {
 		storeTTEntry(b.getHash(), best, TType::EXACT, depth_left, best_move);
 	}
@@ -351,14 +353,17 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node) {
 	return best;
 }
 
-int Engine::quiesce(int alpha, int beta, bool is_pv) {
+int Engine::quiesce(int alpha, int beta, bool is_pv, SearchStack* ss) {
+	ss->clear();
 	nodes++;
 	int search_ply = b.ply - start_ply;
+	sel_depth = std::max(search_ply, sel_depth);
 
 	if (b.isRepetition(1) || b.half_move >= 100) return 0;
 
-	int stand_pat = b.getEval();
-	int best = stand_pat;
+	ss->eval = b.getEval();
+	int stand_pat = ss->eval;
+	int best = ss->eval;
 
 	//delta prune
 	if (stand_pat < alpha - 950) return stand_pat;
@@ -379,19 +384,18 @@ int Engine::quiesce(int alpha, int beta, bool is_pv) {
 		if (entry.type == TType::FAIL_LOW && entry.eval <= alpha) return entry.eval;
 	}
 
-	move_vec[search_ply].clear();
-	b.genPseudoLegalCaptures(move_vec[search_ply]);
-	b.filterToLegal(move_vec[search_ply]);
+	b.genPseudoLegalCaptures(ss->moves);
+	b.filterToLegal(ss->moves);
 
 	// Check for #M
-	if (move_vec[search_ply].empty()) {
-		move_vec[search_ply].clear();
-		b.genPseudoLegalMoves(move_vec[search_ply]);
-		b.filterToLegal(move_vec[search_ply]);
-		if (move_vec[search_ply].empty() && b.isCheck()) {
+	if (ss->moves.empty()) {
+		ss->moves.clear();
+		b.genPseudoLegalMoves(ss->moves);
+		b.filterToLegal(ss->moves);
+		if (ss->moves.empty() && b.isCheck()) {
 			return -99999 + b.ply - start_ply;
 		}
-		if (move_vec[search_ply].empty()) {
+		if (ss->moves.empty()) {
 			return 0;
 		}
 		return stand_pat;
@@ -400,13 +404,13 @@ int Engine::quiesce(int alpha, int beta, bool is_pv) {
 	bool raised_alpha = false;
 	Move best_move;
 	MoveGen move_gen;
-	Move move = move_gen.getNext(*this, b, move_vec[search_ply]);
+	Move move = move_gen.getNext(*this, b, ss);
 	while (move.raw()) {
 		if (move.captured() == eKing) return 99999 - (b.ply - start_ply);
 		if (checkTime(false)) return best;
 
 		b.doMove(move);
-		int score = -quiesce(-beta, -alpha, is_pv);
+		int score = -quiesce(-beta, -alpha, is_pv, ss + 1);
 		b.undoMove();
 
 		if (score > best) {
@@ -422,7 +426,7 @@ int Engine::quiesce(int alpha, int beta, bool is_pv) {
 			storeTTEntry(b.getHash(), score, TType::BETA_CUT, 0, best_move);
 			return score;
 		}
-		move = move_gen.getNext(*this, b, move_vec[search_ply]);
+		move = move_gen.getNext(*this, b, ss);
 	}
 	if (raised_alpha) {
 		storeTTEntry(b.getHash(), best, TType::EXACT, 0, best_move);
@@ -443,10 +447,13 @@ std::vector<Move> Engine::getPrincipalVariation() const {
 
 void Engine::printPV(int score) {
 	std::vector<Move> pv = getPrincipalVariation();
-	std::cout << "info score cp " << score << " depth " << max_depth
+	std::cout << "info score cp " << score
+		<< " depth " << max_depth
+		<< " seldepth " << sel_depth
 		<< " time " << (std::clock() - start_time)
 		<< " nodes " << nodes
 		<< " nps " << static_cast<int>((1000.0 * nodes) / (1000.0 * (std::clock() - start_time) / CLOCKS_PER_SEC))
+		<< " hashfull " << ((1000 * hash_count) / tt.size())
 		<< " pv ";
 
 	chess::Board test_b;
@@ -469,10 +476,8 @@ void Engine::printPV(int score) {
 		if (test_b.isRepetition(1)) {
 			break;
 		}
-		//std::cout << b.getHash() << std::endl;
-		//b.printBoard();
+
 		if (b.isRepetition(1) || b.half_move >= 100) {
-			//std::cout << "whops";
 			break;
 		}
 
@@ -504,17 +509,23 @@ std::string Engine::getPV() {
 }
 
 void Engine::storeTTEntry(u64 hash_key, int score, TType type, u8 depth_left, Move best) {
-	u64 index = static_cast<std::uint64_t>((static_cast<unsigned __int128>(hash_key) * static_cast<unsigned __int128>(hash_size)) >> 64);
+	u64 index = static_cast<std::uint64_t>((static_cast<unsigned __int128>(hash_key) *
+				static_cast<unsigned __int128>(tt.size())) >> 64);
+	if (!tt[index]) {
+		hash_count++;
+	}
 	if (tt[index].ply <= start_ply || tt[index].depth_left <= depth_left) {
 		tt[index] = TTEntry{
 			static_cast<u32>(hash_key & 0xFFFFFFFFull), score, depth_left, static_cast<u16>(start_ply),
 			static_cast<u8>(max_depth), type, best
 		};
+		
 	}
 }
 
 TTEntry Engine::probeTT(u64 hash_key) const {
-	u64 index = static_cast<std::uint64_t>((static_cast<unsigned __int128>(hash_key) * static_cast<unsigned __int128>(hash_size)) >> 64);
+	u64 index = static_cast<std::uint64_t>((static_cast<unsigned __int128>(hash_key) *
+				static_cast<unsigned __int128>(tt.size())) >> 64);
 	if (tt[index].hash == (hash_key & 0xFFFFFFFFull)) {
 		return tt[index];
 	}
@@ -544,7 +555,7 @@ void Engine::calcTime() {
 	}
 	int search_ply = b.ply - start_ply;
 
-	double num_moves = move_vec[search_ply].size();
+	double num_moves = search_stack->moves.size();
 	double factor = num_moves / 1000.0;
 	if (expected_response != b.state_stack.back().move) {
 		factor *= 2.0;

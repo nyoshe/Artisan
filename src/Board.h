@@ -36,14 +36,15 @@ inline u64 rnd64()
 }
 
 struct BoardParams {
-    int32_t tempo = S(20, 45);
+    int32_t tempo = S(22, 45);
     int32_t doubled_pawns = S(1, 48);
-    int32_t passed_pawns = S(-23, 69);
-    int32_t defender_pawns = S(11, 22);
-    int32_t double_defender_pawns = S(-9, 5);
-    int32_t bishop_pair = S(39, 74);
-    int32_t mobility[5] = { S(0,29), S(8, 18), S(16, 17), S(-8, 18), S(-86, 84) };
-    int32_t isolated_pawns = S(13, -49);
+    int32_t passed_pawns = S(-30, 71);
+    int32_t defender_pawns = S(12, 22);
+    int32_t double_defender_pawns = S(-15, 10);
+    int32_t bishop_pair = S(39, 79);
+    int32_t mobility[5] = { S(7,-1), S(6, 0), S(8, 2), S(2, 4), S(-15, 14) };
+    int32_t captures[5] = { S(-5,31), S(3, 18), S(1, 23), S(-10, 17), S(-87, 84) };
+    int32_t isolated_pawns = S(25, -47);
 
     //int32_t piece[6] = {S(1,1), S(10 ,20), S(10,20), S(10,20), S(10,20) , S(10,20)};
     //int32_t phase_values = S(100,100);
@@ -57,6 +58,7 @@ struct EvalCounts {
     int32_t double_defender_pawns = 0;
     int32_t bishop_pair = 0;
     int32_t mobility[5];
+    int32_t captures[5];
     int32_t isolated_pawns = 0;
     //int32_t piece[6];
     //int32_t phase_values = S(100,100);

@@ -106,16 +106,16 @@ void Board::doMove(Move move) {
 
 	// Handle promotion  
 	if (move.promotion() != eNone) {
-		boards[us][p] &= ~BB::set_bit(move.to());
-		boards[us][move.promotion()] |= BB::set_bit(move.to());
+		boards[us][p] &= ~BB::set_bit[move.to()];
+		boards[us][move.promotion()] |= BB::set_bit[move.to()];
 		mailbox[move.to()] = move.promotion();
 	}
 
 	// Handle en passant  
 	if (move.isEnPassant()) {
 		u8 ep_capture_square = move.to() + (us == eWhite ? -8 : 8);
-		boards[!us][ePawn] &= ~BB::set_bit(ep_capture_square);
-		boards[!us][0] &= ~BB::set_bit(ep_capture_square);
+		boards[!us][ePawn] &= ~BB::set_bit[ep_capture_square];
+		boards[!us][0] &= ~BB::set_bit[ep_capture_square];
 		mailbox[ep_capture_square] = eNone;
 	}
 
@@ -375,38 +375,38 @@ void Board::movePiece(u8 from, u8 to) {
 		throw std::logic_error("weird");
 	}
 #endif
-	boards[color][mailbox[from]] ^= BB::set_bit(from);
-	boards[color][0] ^= BB::set_bit(from);
-	boards[color][mailbox[from]] |= BB::set_bit(to);
-	boards[color][0] |= BB::set_bit(to);
+	boards[color][mailbox[from]] ^= BB::set_bit[from];
+	boards[color][0] ^= BB::set_bit[from];
+	boards[color][mailbox[from]] |= BB::set_bit[to];
+	boards[color][0] |= BB::set_bit[to];
 	//clear enemy bit
-	boards[!color][mailbox[to]] &= ~BB::set_bit(to);
-	boards[!color][0] &= ~BB::set_bit(to);
+	boards[!color][mailbox[to]] &= ~BB::set_bit[to];
+	boards[!color][0] &= ~BB::set_bit[to];
 
 	mailbox[to] = mailbox[from];
 	mailbox[from] = eNone;
 }
 
 void Board::setPiece(u8 square, u8 color, u8 piece) {
-	boards[color][piece] |= BB::set_bit(square);
-	boards[color][0] |= BB::set_bit(square);
+	boards[color][piece] |= BB::set_bit[square];
+	boards[color][0] |= BB::set_bit[square];
 	mailbox[square] = piece;
 }
 
 void Board::removePiece(u8 square) {
 	Side color = getSide(square);
 	if (color != eSideNone) {
-		boards[color][mailbox[square]] &= ~BB::set_bit(square);
-		boards[color][0] &= ~BB::set_bit(square);
+		boards[color][mailbox[square]] &= ~BB::set_bit[square];
+		boards[color][0] &= ~BB::set_bit[square];
 	}
 
 	mailbox[square] = eNone;
 }
 
 Side Board::getSide(int square) const {
-	return boards[eWhite][0] & BB::set_bit(square)
+	return boards[eWhite][0] & BB::set_bit[square]
 		? eWhite
-		: (boards[eBlack][0] & BB::set_bit(square) ? eBlack : eSideNone);
+		: (boards[eBlack][0] & BB::set_bit[square] ? eBlack : eSideNone);
 }
 
 void Board::loadFen(std::istringstream& fen_stream) {
@@ -443,8 +443,8 @@ void Board::loadFen(std::istringstream& fen_stream) {
 			case 'k': piece = eKing; break;
 			}
 			if (piece != eNone) {
-				boards[color][piece] |= BB::set_bit(square);
-				boards[color][0] |= BB::set_bit(square);
+				boards[color][piece] |= BB::set_bit[square];
+				boards[color][0] |= BB::set_bit[square];
 				mailbox[square] = piece;
 			}
 			++square;
@@ -668,11 +668,11 @@ void Board::genPseudoLegalCaptures(StaticVector<Move>& moves) {
 	if (ep_square != -1) {
 		int ep_from = ep_square + (us == eWhite ? -8 : 8);
 		// Left capture
-		if ((ep_square & 7) > 0 && (pawns & BB::set_bit(ep_from - 1))) {
+		if ((ep_square & 7) > 0 && (pawns & BB::set_bit[ep_from - 1])) {
 			moves.emplace_back({ u8(ep_from - 1), u8(ep_square), ePawn, ePawn, eNone, true });
 		}
 		// Right capture
-		if ((ep_square & 7) < 7 && (pawns & BB::set_bit(ep_from + 1))) {
+		if ((ep_square & 7) < 7 && (pawns & BB::set_bit[ep_from + 1])) {
 			moves.emplace_back({ u8(ep_from + 1), u8(ep_square), ePawn, ePawn, eNone, true });
 		}
 	}
@@ -769,7 +769,7 @@ u64 Board::getAttackers(int square) const {
 
 u64 Board::getAttackers(int square, bool side) const {
 	u64 attackers = 0;
-	u64 square_mask = BB::set_bit(square);
+	u64 square_mask = BB::set_bit[square];
 	u64 our_occ = boards[side][0];
 	u64 their_occ = boards[!side][0];
 	u64 all_occ = our_occ | their_occ;
@@ -777,11 +777,18 @@ u64 Board::getAttackers(int square, bool side) const {
 	// Check pawns  
 	int left_capture = (side == eBlack) ? -7 : 9;
 	int right_capture = (side == eBlack) ? -9 : 7;
+	
+	u64 west_defenders;
+	u64 east_defenders;
+	if (side == eWhite) {
+		west_defenders = BB::get_pawn_attacks(eWest, eWhite, square_mask, boards[eBlack][ePawn]);
+		east_defenders = BB::get_pawn_attacks(eEast, eWhite, square_mask, boards[eBlack][ePawn]);
+	} else {
+		west_defenders = BB::get_pawn_attacks(eWest, eBlack, square_mask, boards[eWhite][ePawn]);
+		east_defenders = BB::get_pawn_attacks(eEast, eBlack, square_mask, boards[eWhite][ePawn]);
+	}
+	attackers |= east_defenders | west_defenders;
 
-	if ((square % 8) != 7)
-		attackers |= BB::set_bit(square + left_capture) & boards[!side][ePawn];
-	if ((square % 8) != 0)
-		attackers |= BB::set_bit(square + right_capture) & boards[!side][ePawn];
 
 	// Check knights  
 	attackers |= BB::knight_attacks[square] & boards[!side][eKnight];
@@ -796,7 +803,6 @@ u64 Board::getAttackers(int square, bool side) const {
 
 	// Check king  
 	attackers |= BB::king_attacks[square] & boards[!side][eKing];
-
 	return attackers;
 }
 
@@ -1005,17 +1011,19 @@ int Board::getMobility(bool side)  {
 		unsigned long from;
 		while (attackers) {
 			BB::bitscan_reset(from, attackers);
-			u64 targets;
+			u64 targets = 0;
 			switch (p) {
-			case eKnight: targets = BB::knight_attacks[from]; break;
-			case eBishop: targets = BB::get_bishop_attacks(from, all_occ); break;
-			case eRook: targets = BB::get_rook_attacks(from, all_occ); break;
-			case eQueen: targets = BB::get_queen_attacks(from, all_occ); break;
-			case eKing: targets = BB::king_attacks[from]; break;
+				case eKnight: targets = BB::knight_attacks[from]; break;
+				case eBishop: targets = BB::get_bishop_attacks(from, all_occ); break;
+				case eRook: targets = BB::get_rook_attacks(from, all_occ); break;
+				case eQueen: targets = BB::get_queen_attacks(from, all_occ); break;
+				case eKing: targets = BB::king_attacks[from]; break;
+				default: break;
 			}
 			//mobility += BB::popcnt(targets & ~our_occ);
 			//extra points for captures
-			eval_c.mobility[p-2] += side == eWhite ? BB::popcnt(targets & boards[!side][0]) : -BB::popcnt(targets & boards[!side][0]);
+			eval_c.mobility[p - 2] += side == eWhite ? BB::popcnt(targets & ~all_occ) : -BB::popcnt(targets & ~boards[side][0]);
+			eval_c.captures[p - 2] += side == eWhite ? BB::popcnt(targets & boards[!side][0]) : -BB::popcnt(targets & boards[!side][0]);
 			mobility += BB::popcnt(targets & boards[!side][0]);
 		}
 	}
@@ -1110,11 +1118,11 @@ int Board::evalUpdate()  {
 	
 	auto king_safety = [&](int sq, bool side) {
 		u64 king_acc = BB::king_attacks[sq] & ~boards[side][0];
-		king_acc |= ~getOccupancy() & ((king_acc | BB::set_bit(sq)) << (side ? -8 : 8));
+		king_acc |= ~getOccupancy() & ((king_acc | BB::set_bit[sq]) << (side ? -8 : 8));
 		//std::cout << BB::to_string(king_acc) << std::endl;
-		king_acc |= ~getOccupancy() & ((king_acc | BB::set_bit(sq)) << (side ? -8 : 8));
+		king_acc |= ~getOccupancy() & ((king_acc | BB::set_bit[sq]) << (side ? -8 : 8));
 		//std::cout << BB::to_string(king_acc) << std::endl;
-		//king_acc |= ~getOccupancy() & ((king_acc | BB::set_bit(sq)) << (side ? -8 : 8));
+		//king_acc |= ~getOccupancy() & ((king_acc | BB::set_bit[sq]) << (side ? -8 : 8));
 		//std::cout << BB::to_string(king_acc) << std::endl;
 		return (king_acc) & ~boards[side][0];
 	};
@@ -1142,16 +1150,11 @@ int Board::evalUpdate()  {
 		unsigned long at = 0;
 		int attack_val = 0;
 
-
 		if (side == eBlack) {
-
 			attack_val += 2 * BB::popcnt(boards[eWhite][ePawn] & king_zone);
 		} else {
 			attack_val += 2 * BB::popcnt(boards[eBlack][ePawn] & king_zone);
 		}
-
-		//static const int CountModifier[8] = { 0, 0, 63, 126, 96, 124, 124, 128 };
-
 		while (knights) {
 			BB::bitscan_reset(at, knights);
 			attack_val += 2 * BB::popcnt(BB::knight_attacks[at] & king_zone);

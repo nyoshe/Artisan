@@ -80,11 +80,13 @@ namespace BB {
 
     inline u64 knight_attacks[64];
 	inline u64 king_attacks[64];
+    inline u64 set_bit[64];
 
     
     inline u64 files[8];
     inline u64 ranks[8];
     inline u64 neighbor_files[8];
+    
 
     inline u64 front_spans[2][64];
 
@@ -203,13 +205,13 @@ namespace BB {
         return std::popcount(board);
     }
 
-	inline u64 set_bit(const int square) {
-		return 1ULL << square;
-	}
-
     inline void init()
     {
-        
+        for (int i = 0; i < 64; i++) {
+            set_bit[i] = 1ULL << i;
+        }
+
+        //init piece square tables
         for (int i = 0; i < 7; i++) {
             for (int square = 0; square < 64; square++) {
                 mg_table[i][square] += mg_p_val[i];
@@ -234,7 +236,7 @@ namespace BB {
             for (const auto& dir : bishop_dirs) {
                 Pos p = origin + dirs[static_cast<int>(dir)];
                 while (p.f >= 1 && p.f < 7 && p.r >= 1 && p.r < 7) {
-                    bishop_blocker_mask[i] |= set_bit(p.toSquare());
+                    bishop_blocker_mask[i] |= set_bit[p.toSquare()];
                     p += dirs[static_cast<int>(dir)];
                 }
             }
@@ -244,7 +246,7 @@ namespace BB {
                 Pos p = origin + dirs[static_cast<int>(dir)];
                 while (p.f >= (origin.f == 0 ? 0 : 1) && p.f < (origin.f == 7 ? 8 : 7) &&
 						p.r >= (origin.r == 0 ? 0 : 1) && p.r < (origin.r == 7 ? 8 : 7)) {
-                    rook_blocker_mask[i] |= set_bit(p.toSquare());
+                    rook_blocker_mask[i] |= set_bit[p.toSquare()];
                     p += dirs[static_cast<int>(dir)];
                 }
             }
@@ -259,22 +261,22 @@ namespace BB {
             // Rook coverage
             // Right
             for (int f = origin.f + 1; f < 8; ++f)
-                rook_coverage[i] |= set_bit(Pos(f, origin.r).toSquare());
+                rook_coverage[i] |= set_bit[Pos(f, origin.r).toSquare()];
             // Left
             for (int f = origin.f - 1; f >= 0; --f)
-                rook_coverage[i] |= set_bit(Pos(f, origin.r).toSquare());
+                rook_coverage[i] |= set_bit[Pos(f, origin.r).toSquare()];
             // Up
             for (int r = origin.r + 1; r < 8; ++r)
-                rook_coverage[i] |= set_bit(Pos(origin.f, r).toSquare());
+                rook_coverage[i] |= set_bit[Pos(origin.f, r).toSquare()];
             // Down
             for (int r = origin.r - 1; r >= 0; --r)
-                rook_coverage[i] |= set_bit(Pos(origin.f, r).toSquare());
+                rook_coverage[i] |= set_bit[Pos(origin.f, r).toSquare()];
 
             // Bishop coverage
             for (const auto& dir : bishop_dirs) {
                 Pos p = origin + dirs[static_cast<int>(dir)];
                 while (p.f >= 0 && p.f < 8 && p.r >= 0 && p.r < 8) {
-                    bishop_coverage[i] |= set_bit(p.toSquare());
+                    bishop_coverage[i] |= set_bit[p.toSquare()];
                     p += dirs[static_cast<int>(dir)];
                 }
             }
@@ -292,7 +294,7 @@ namespace BB {
             for (auto& move : knight_moves) {
                 Pos p(origin.f + move[0], origin.r + move[1]);
                 if (p.f >= 0 && p.f < 8 && p.r >= 0 && p.r < 8) {
-                    knight_attacks[i] |= set_bit(p.toSquare());
+                    knight_attacks[i] |= set_bit[p.toSquare()];
                 }
             }
         }
@@ -309,7 +311,7 @@ namespace BB {
             for (auto& move : king_moves) {
                 Pos p(origin.f + move[0], origin.r + move[1]);
                 if (p.f >= 0 && p.f < 8 && p.r >= 0 && p.r < 8) {
-                    king_attacks[i] |= set_bit(p.toSquare());
+                    king_attacks[i] |= set_bit[p.toSquare()];
 
                 }
             }
@@ -364,7 +366,7 @@ namespace BB {
                 u64 blockers = 0;
                 for (size_t i = 0; i < num; ++i) {
                     if (mask & (1ULL << i)) {
-                        blockers |= set_bit(relevant[i]);
+                        blockers |= set_bit[relevant[i]];
                     }
                 }
                 combinations.push_back(blockers);
@@ -381,7 +383,7 @@ namespace BB {
                 u64 blockers = 0;
                 for (size_t i = 0; i < num; ++i) {
                     if (mask & (1ULL << i)) {
-                        blockers |= set_bit(relevant[i]);
+                        blockers |= set_bit[relevant[i]];
                     }
                 }
 
@@ -393,26 +395,26 @@ namespace BB {
                 // Right
                 for (int f = file + 1; f < 8; ++f) {
                     int sq = f | (rank << 3);
-                    attacks |= set_bit(sq);
-                    if (blockers & set_bit(sq)) break;
+                    attacks |= set_bit[sq];
+                    if (blockers & set_bit[sq]) break;
                 }
                 // Left
                 for (int f = file - 1; f >= 0; --f) {
                     int sq = f | (rank << 3);
-                    attacks |= set_bit(sq);
-                    if (blockers & set_bit(sq)) break;
+                    attacks |= set_bit[sq];
+                    if (blockers & set_bit[sq]) break;
                 }
                 // Up
                 for (int r = rank + 1; r < 8; ++r) {
                     int sq = file | (r << 3);
-                    attacks |= set_bit(sq);
-                    if (blockers & set_bit(sq)) break;
+                    attacks |= set_bit[sq];
+                    if (blockers & set_bit[sq]) break;
                 }
                 // Down
                 for (int r = rank - 1; r >= 0; --r) {
                     int sq = file | (r << 3);
-                    attacks |= set_bit(sq);
-                    if (blockers & set_bit(sq)) break;
+                    attacks |= set_bit[sq];
+                    if (blockers & set_bit[sq]) break;
                 }
                 
                 // Compute the magic index for this blocker set
@@ -434,7 +436,7 @@ namespace BB {
                 u64 blockers = 0;
                 for (size_t i = 0; i < num; ++i) {
                     if (mask & (1ULL << i)) {
-                        blockers |= set_bit(relevant[i]);
+                        blockers |= set_bit[relevant[i]];
                     }
                 }
                 combinations.push_back(blockers);
@@ -451,7 +453,7 @@ namespace BB {
                 u64 blockers = 0;
                 for (size_t i = 0; i < num; ++i) {
                     if (mask & (1ULL << i)) {
-                        blockers |= set_bit(relevant[i]);
+                        blockers |= set_bit[relevant[i]];
                     }
                 }
 
@@ -463,26 +465,26 @@ namespace BB {
                 // Top-right
                 for (int f = file + 1, r = rank + 1; f < 8 && r < 8; ++f, ++r) {
                     int sq = f | (r << 3);
-                    attacks |= set_bit(sq);
-                    if (blockers & set_bit(sq)) break;
+                    attacks |= set_bit[sq];
+                    if (blockers & set_bit[sq]) break;
                 }
                 // Top-left
                 for (int f = file - 1, r = rank + 1; f >= 0 && r < 8; --f, ++r) {
                     int sq = f | (r << 3);
-                    attacks |= set_bit(sq);
-                    if (blockers & set_bit(sq)) break;
+                    attacks |= set_bit[sq];
+                    if (blockers & set_bit[sq]) break;
                 }
                 // Bottom-right
                 for (int f = file + 1, r = rank - 1; f < 8 && r >= 0; ++f, --r) {
                     int sq = f | (r << 3);
-                    attacks |= set_bit(sq);
-                    if (blockers & set_bit(sq)) break;
+                    attacks |= set_bit[sq];
+                    if (blockers & set_bit[sq]) break;
                 }
                 // Bottom-left
                 for (int f = file - 1, r = rank - 1; f >= 0 && r >= 0; --f, --r) {
                     int sq = f | (r << 3);
-                    attacks |= set_bit(sq);
-                    if (blockers & set_bit(sq)) break;
+                    attacks |= set_bit[sq];
+                    if (blockers & set_bit[sq]) break;
                 }
 
                 // Compute the magic index for this blocker set
