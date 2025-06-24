@@ -16,6 +16,7 @@ add_executable (Artisan "Artisan.cpp" "Artisan.h"
     "UCI.h"
  "Misc.h"   "Tuner.h" "Tuner.cpp")
 
+
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET Artisan PROPERTY CXX_STANDARD 20)
 endif()

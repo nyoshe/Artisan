@@ -719,7 +719,7 @@ void Board::filterToLegal(StaticVector<Move>& moves) {
 		return;
 	}
 	//bool current_check = isCheck();
-	for (int i = 0; i < moves.size();i++) {
+	for (unsigned int i = 0; i < moves.size();i++) {
 		Move move = moves[i];
 		if (move.isCastle()) {
 			if (getAttackers((move.to() + move.from()) / 2, us)) {
@@ -774,32 +774,19 @@ u64 Board::getAttackers(int square, bool side) const {
 	u64 their_occ = boards[!side][0];
 	u64 all_occ = our_occ | their_occ;
 
-	// Check pawns  
-	int left_capture = (side == eBlack) ? -7 : 9;
-	int right_capture = (side == eBlack) ? -9 : 7;
-	
-	u64 west_defenders;
-	u64 east_defenders;
-	if (side == eWhite) {
-		west_defenders = BB::get_pawn_attacks(eWest, eWhite, square_mask, boards[eBlack][ePawn]);
-		east_defenders = BB::get_pawn_attacks(eEast, eWhite, square_mask, boards[eBlack][ePawn]);
-	} else {
-		west_defenders = BB::get_pawn_attacks(eWest, eBlack, square_mask, boards[eWhite][ePawn]);
-		east_defenders = BB::get_pawn_attacks(eEast, eBlack, square_mask, boards[eWhite][ePawn]);
-	}
-	attackers |= east_defenders | west_defenders;
+	u64 west_defenders = BB::get_pawn_attacks(eWest, static_cast<Side>(side), square_mask, boards[!side][ePawn]);
+	u64 east_defenders = BB::get_pawn_attacks(eEast, static_cast<Side>(side), square_mask, boards[!side][ePawn]);
 
+	attackers |= east_defenders | west_defenders;
 
 	// Check knights  
 	attackers |= BB::knight_attacks[square] & boards[!side][eKnight];
 	//check bishops
-	attackers |= BB::get_bishop_attacks(square, all_occ) & ~our_occ & boards[!side][eBishop];
+	attackers |= BB::get_bishop_attacks(square, all_occ) & ~our_occ & (boards[!side][eBishop] | boards[!side][eQueen]);
 
 	// Check rooks
-	attackers |= BB::get_rook_attacks(square, all_occ) & ~our_occ & boards[!side][eRook];
+	attackers |= BB::get_rook_attacks(square, all_occ) & ~our_occ & (boards[!side][eRook] | boards[!side][eQueen]);
 
-	//check queen
-	attackers |= BB::get_queen_attacks(square, all_occ) & ~our_occ & boards[!side][eQueen];
 
 	// Check king  
 	attackers |= BB::king_attacks[square] & boards[!side][eKing];
@@ -919,9 +906,9 @@ u64 Board::getHash() const {
 }
 
 bool Board::isRepetition(int n) const {
-	if (state_stack.size() < half_move || state_stack.empty()) return false;
+	if (state_stack.empty()) return false;
 	int counter = 0;
-	for (int i = 1; i <= std::min(int(state_stack.size()), half_move + 1); i++) {
+	for (int i = 1; i <= std::min(static_cast<int>(state_stack.size()), half_move + 1); i++) {
 		if (state_stack[state_stack.size() - i].hash == hash) {
 			counter++;
 		}

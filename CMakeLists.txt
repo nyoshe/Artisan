@@ -11,8 +11,10 @@ endif()
 add_compile_options(/EHsc /o3)
 set (CMAKE_CXX_STANDARD 20)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /STACK:0x2000000")
 
 project ("Artisan")
+
 
 # Include sub-projects.
 add_subdirectory ("src")

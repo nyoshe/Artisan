@@ -17,13 +17,13 @@ enum class TType : u8 {
 };
 
 struct TTEntry {
-	u32 hash;
+	u32 hash = 0;
 	int eval = 0;
 	u8 depth_left = 0;
 	u16 ply = 0;
 	u8 depth_from_root = 0;
 	TType type = TType::INVALID;
-	Move best_move;
+	Move best_move = Move();
 
 	[[nodiscard]] explicit constexpr operator bool() const {
 		return type != TType::INVALID;
@@ -39,13 +39,17 @@ struct TimeControl {
 	int movetime = 0;
 };
 struct UciOptions {
-	u64 hash_size = 16;
+	u64 hash_size = 64;
 	bool debug = false;
+	bool uci = false;
 };
 
 
 struct SearchStack {
-	int eval = 0;
+	int static_eval = 0;
+	int improving_rate = 0;
+	bool improving = false;
+	bool in_check = false;
 	StaticVector<Move> moves;
 	StaticVector<Move> seen_quiets;
 	StaticVector<Move> seen_noisies;
@@ -56,17 +60,22 @@ struct SearchStack {
 		seen_noisies.clear();
 		killers[0] = Move();
 		killers[1] = Move();
-		eval = 0;
+		static_eval = 0;
+		improving_rate = 0;
+		improving = false;
+		in_check = false;
 	}
 };
 
 class Engine {
+	static constexpr int MAX_PLY = 128;
+	SearchStack search_stack[MAX_PLY];
 	UciOptions uci_options;
 
 	int hash_count = 0;
-	int hash_miss;
+	int hash_miss = 0;
 	//Move best_move;
-	static constexpr int MAX_PLY = 64;
+	
 	std::array<std::array<Move, MAX_PLY>, MAX_PLY> pv_table;
 	std::array<int, MAX_PLY> pv_length;
 	std::vector<TTEntry> tt;
@@ -90,12 +99,11 @@ class Engine {
 	int quiesce(int alpha, int beta, bool is_pv, SearchStack* ss);
 
 public:
-	SearchStack search_stack[MAX_PLY];
+	
 	std::array<std::array<std::array<int, 64>, 64>, 2> history_table;
 	std::array<std::array < std::array<std::array<int, 64>, 7>, 7>, 2> capture_history;
 
 	int hash_hits = 0;
-
 	int start_ply = 0;
 	Board b;
 	TimeControl tc;
@@ -111,6 +119,11 @@ public:
 				}
 			}
 		}
+		for (auto& i : pv_table) {
+			for (auto& j : i) {
+				j = Move();
+			}
+		}
 	}
 
 	std::vector<PerfT> doPerftSearch(int depth);
@@ -123,7 +136,6 @@ public:
 	Move search(int depth);
 	std::vector<Move> getPrincipalVariation() const;
 
-	std::string getPV();
 	void printPV(int score);
 
 	void storeTTEntry(u64 hash_key, int score, TType type, u8 depth_left, Move best);
@@ -149,7 +161,6 @@ enum class MoveStage {
 class MoveGen {
 	MoveStage stage = MoveStage::ttMove;
 	int killer_slot = 0;
-	bool init = false;
 
 public:
 	Move getNext(Engine& e, Board& b, SearchStack* ss) {

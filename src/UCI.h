@@ -44,6 +44,7 @@ public:
             {
                 sendId();
                 sendOptions();
+                options.uci = true;
                 std::cout << "uciok" << std::endl;
             }
             else if (token == "isready")
@@ -100,17 +101,17 @@ Position; fen r2qk1nr/pp1bbppp/2np4/1B1Q4/4PB2/5N2/PPP2PPP/RN2K2R b KQkq - 5 8
 Moves; g8f6 d5d3 e8g8 b5c4 c6b4
             	*/
                 static std::vector<std::string> pos_list = {
-                    "fen r1bqk1r1/1p1p1n2/p1n2pN1/2p1b2Q/2P1Pp2/1PN5/PB4PP/R4RK1 w q -",
-					"fen r1n2N1k/2n2K1p/3pp3/5Pp1/b5R1/8/1PPP4/8 w -",
-					"fen r1b1r1k1/1pqn1pbp/p2pp1p1/P7/1n1NPP1Q/2NBBR2/1PP3PP/R6K w -",
-					"fen 5b2/p2k1p2/P3pP1p/n2pP1p1/1p1P2P1/1P1KBN2/7P/8 w -",
-					"fen r3kbnr/1b3ppp/pqn5/1pp1P3/3p4/1BN2N2/PP2QPPP/R1BR2K1 w kq -"
+                    "fen r1bqk1r1/1p1p1n2/p1n2pN1/2p1b2Q/2P1Pp2/1PN5/PB4PP/R4RK1 w q - 0 0",
+					"fen r1n2N1k/2n2K1p/3pp3/5Pp1/b5R1/8/1PPP4/8 w - - 0 0",
+					"fen r1b1r1k1/1pqn1pbp/p2pp1p1/P7/1n1NPP1Q/2NBBR2/1PP3PP/R6K w - - 0 0",
+					"fen 5b2/p2k1p2/P3pP1p/n2pP1p1/1p1P2P1/1P1KBN2/7P/8 w - - 0 0",
+					"fen r3kbnr/1b3ppp/pqn5/1pp1P3/3p4/1BN2N2/PP2QPPP/R1BR2K1 w kq - 0 0"
 
                 };
 
                 //std::istringstream test("fen r2qkb1r/p1pp1ppp/1p2pn2/8/1nPP4/2N1PP2/PPQ2P1P/R1B1KB1R w KQkq - 1 8 moves c2d2 c7c5 d4d5 f8d6 f1g2 e6d5 a2a3 b4a6 c4d5 e8g8 e1g1 f8e8 f3f4 a6c7 e3e4 f6h5 e4e5 d6f8 d5d6 c7e6 g2a8 d8a8 d2d5 h5f4 d5a8 e8a8 f1e1 f4d3 e1e3 c5c4 c3b5 e6c5 c1d2 d3b2 d2b4 c5d3 b5c7 a8c8 b4c3 b2a4 c3d4 h7h5 e3e4 c8d8 a1a2 f7f5 e5f6 f8d6 e4e8 d8e8 c7e8 d6c5 d4c5 a4c5 f6g7 d3f4 f2f3 c4c3 a2c2 h5h4 g1h1 f4d5 e8d6 h4h3 d6f5 g8h7 c2c1 c5d3 c1c2 b6b5 c2e2 d5c7 e2c2 c7d5 c2e2");
                 chess::Board testb("r1bqk1nr/ppp2ppp/2nb4/3pp3/8/5P1P/PPPPP1PK/R1BQ1BNR b kq - 2 5 ");
-                std::istringstream test("fen 4q3/1p2r2k/p1pQ3p/P3Nbpn/2B5/6P1/1P6/4R1K1 w - - 1 41");
+                std::istringstream test("fen 1r6/3b3p/p2k3P/Pr1p3R/2p1p3/2K3P1/2P1BP2/R7 w - - 5 37");
                 /*
                 std::istringstream moves("c5d4 d1d4 g8f6 f1g2 b8c6 d4d2 c8f5 b1c3 e7e6 g1f3 f8b4 f3d4 c6d4 e3d4 e8g8 e1g1 a8c8 a2a3 b4c3 d4c3 h7h6 f2f3 a7a6 a1d1 f5g6 f1f2 g8h7 e2e4 d5e4 d2c1 d8c7 c3f6 e4f3 g2f3 g7f6 d1d4 c7b6 d4b4 b6f2 g1f2 c8c2 c1c2 g6c2 b4b7 h7g6 b7a7 c2d3 f2e3 f8d8 f3e2 d3b5 e2b5 a6b5 a7b7 d8d5 e3e2 f6f5 h2h4 d5e5 e2f3 e5d5 f3e2 d5e5 e2f3 e5c5 f3f4 g6f6 f4e3 c5e5 e3f3 e5c5 f3f4 c5d5 f4e3 d5e5 e3f3 e5c5 f3e3 h6h5 e3d4 c5d5 d4e3 d5e5 e3f3 e5d5 f3e3 f6g7 e3e2 d5e5 e2f3 g7g6 b7b8 e5d5 f3e3 d5e5 e3f3 e5c5 f3f4 c5d5 f4e3 g6g7 e3f4 g7f6 f4e3 d5c5 b8b7 c5d5 b2b4 f6g7 e3e2 g7g6 e2e3 g6f6 e3e2 f6g6 e2e3 g6g7 b7b6 g7f6 b6b7 f6g6 b7b8 d5e5 e3f3 g6g7 f3f2 e5d5 f2e3 d5e5 e3f3 g7g6 b8b7 g6f6 f3f2 e5d5 f2e2 f6g7 e2e3 d5e5 e3f2 g7f6 f2f3 f6g6 b7b8 g6g7 b8b7 e5d5 f3e3 g7g6 b7b8 g6f6");
                 std::string s;
@@ -125,17 +126,10 @@ Moves; g8f6 d5d3 e8g8 b5c4 c6b4
                 engine_.tc.winc = 100000000;
                 engine_.tc.binc = 100000000;
                 setupBoard(test);
-                engine_.b.printBoard();
+
                 int eval_1 = engine_.b.getEval();
                 EvalCounts ec1 = engine_.b.eval_c;
 
-                std::istringstream test2("fen 4q3/1p2r2k/p1pQ3p/P3Nbpn/2B5/6P1/1P4K1/4R3 b - - 2 41");
-                setupBoard(test2);
-                int eval_2 = engine_.b.getEval();
-                EvalCounts ec2 = engine_.b.eval_c;
-
-                engine_.b.printBoard();
-                std::cout << engine_.b.boardString();
                 std::istringstream go_stream("go movetime 500000");
                 handleGo(go_stream);
 
@@ -162,10 +156,7 @@ Moves; g8f6 d5d3 e8g8 b5c4 c6b4
         
         while (true) {
             data_out.lock();
-            std::string pv = engine_.getPV();
-            if (!pv.empty()) {
-                data.pv = pv;
-            }
+
             data_out.unlock();
         }
         
@@ -199,7 +190,7 @@ private:
     void sendOptions()
     {
         std::cout << "option name Hash type spin default 16 min 1 max 65536" << std::endl;
-        std::cout << "option name Hash type spin default 16 min 1 max 65536" << std::endl;
+        std::cout << "option name Threads type spin default 1 min 1 max 1" << std::endl;
     }
 
 
