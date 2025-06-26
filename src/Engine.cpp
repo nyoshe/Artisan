@@ -149,7 +149,7 @@ Move Engine::search(int depth) {
 int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, SearchStack* ss) {
 	ss->clear();
 	const int search_ply = b.ply - start_ply;
-	
+
 	sel_depth = std::max(search_ply, sel_depth);
 	const bool is_pv = alpha != beta - 1;
 	if (is_pv) pv_length[search_ply] = 0;
@@ -198,13 +198,13 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 			if (tt_entry.type == TType::BETA_CUT && tt_entry.eval >= beta) return tt_entry.eval;
 			if (tt_entry.type == TType::FAIL_LOW && tt_entry.eval <= alpha) return tt_entry.eval;
 		}
-
+		
 		
 		//null move pruning, do not NMP in late game
-		if (depth_left >= 3 && (ss->static_eval) > beta && b.getPhase() <= 16) {
+		if (depth_left >= 2 && ss->static_eval > beta && (ss - 1)->current_move != Move(0,0)) {
 			b.doMove(Move(0, 0));
 			const int R = 4 + depth_left / 4 + std::min(3, (ss->static_eval - beta) / 200);
-			int null_score = -alphaBeta(-beta, -beta + 1, depth_left - R, true, ss + 1);
+			int null_score = -alphaBeta(-beta, -beta + 1, depth_left - R, !cut_node, ss + 1);
 			b.undoMove();
 			//don't return wins
 			if (null_score >= beta && null_score < 30000 && null_score > -30000) return null_score;
@@ -217,7 +217,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 
 		// Futility margins increasing by depth
 		static constexpr int futility_margins[4] = { 0, 100, 300, 500 };
-		if (depth_left <= 3 && !ss->improving) {
+		if (depth_left <= 3) {
 			int futility_margin = ss->static_eval + futility_margins[depth_left];
 			futility_prune = (futility_margin <= alpha);
 		}
@@ -254,11 +254,11 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 		
 
 		b.doMove(move);
+		ss->current_move = move;
 
 		bool move_is_check = b.isCheck();
-		bool do_pruning = is_quiet && !move_is_check && !is_pv && !is_root;
 
-		if (do_pruning) {
+		if (is_quiet && !move_is_check && !is_pv && !is_root) {
 			//futility pruning, LMP
 			if (futility_prune) {
 				b.undoMove();
@@ -280,7 +280,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 		
 
 		//search reductions
-		if (moves_searched > 3 + 2 * is_pv && !move_is_check && depth_left > 2 && !is_root) {
+		if (moves_searched > 2 + 2 * is_pv + !ss->improving && !move_is_check && depth_left > 2 && !is_root) {
 			int R = 0;
 			
 			if (!is_quiet) {
@@ -292,7 +292,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 			//R -= history_table[!b.us][move.from()][move.to()] / 8870;
 			R += !is_pv;
 			//R -= is_pv;
-			//R += cut_node;
+			R += cut_node;
 			//R += tt_entry ? (tt_entry.best_move.captured() || tt_entry.best_move.promotion()) : 0;
 
 
@@ -499,18 +499,39 @@ void Engine::printPV(int score) {
 			<< std::setw(8) << std::setprecision(2) << static_cast<float>(hash_count * 100.0 / static_cast<float>(tt.size())) << "%"
 			<< "   ";
 	}
-	
+	chess::Board test_b;
+	if (!b.start_fen.empty()) {
+		test_b.setFen(b.start_fen);
+	}
+	else {
 
+	}
+
+	for (auto m : b.state_stack) {
+		test_b.makeMove(chess::uci::uciToMove(test_b, m.move.toUci()));
+	}
 
 	int i = 0;
 	for (auto& move : pv) {
 		i++;
 		b.doMove(move);
+		test_b.makeMove(chess::uci::uciToMove(test_b, move.toUci()));
+		if (test_b.isRepetition(2)) {
+			break;
+		}
+
+		if (b.isRepetition(2) || b.half_move >= 100) {
+			break;
+		}
+
 		std::cout << move.toUci() << " ";
+
 	}
 	for (int j = 0; j < i; j++) {
 		b.undoMove();
 	}
+
+
 	std::cout << std::endl;
 }
 

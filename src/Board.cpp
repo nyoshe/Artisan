@@ -908,7 +908,7 @@ u64 Board::getHash() const {
 bool Board::isRepetition(int n) const {
 	if (state_stack.empty()) return false;
 	int counter = 0;
-	for (int i = 1; i <= std::min(static_cast<int>(state_stack.size()), half_move + 1); i++) {
+	for (int i = 1; i <= std::min(static_cast<int>(state_stack.size()), static_cast<int>(half_move + 1)); i++) {
 		if (state_stack[state_stack.size() - i].hash == hash) {
 			counter++;
 		}
@@ -1192,4 +1192,97 @@ int Board::evalUpdate()  {
 	out = ((24 - game_phase) * MG_SCORE(out)) / 24  + (game_phase * EG_SCORE(out)) / 24;
 	return out;
 }
+/*
+int Board::staticExchangeEvaluation(Board* board, Move move, int threshold) {
 
+	int from, to, type, colour, balance, nextVictim;
+	uint64_t bishops, rooks, occupied, attackers, myAttackers;
+
+	// Unpack move information
+	from = move.from();
+	to = move.to();
+	type = move.piece();
+
+	// Next victim is moved piece or promotion type
+	nextVictim = !move.promotion()
+		? mailbox[from]
+		: move.promotion();
+
+	// Balance is the value of the move minus threshold. Function
+	// call takes care for Enpass, Promotion and Castling moves.
+	balance = moveEstimatedValue(board, move) - threshold;
+
+	// Best case still fails to beat the threshold
+	if (balance < 0) return 0;
+
+	// Worst case is losing the moved piece
+	balance -= SEEPieceValues[nextVictim];
+
+	// If the balance is positive even if losing the moved piece,
+	// the exchange is guaranteed to beat the threshold.
+	if (balance >= 0) return 1;
+
+	// Grab sliders for updating revealed attackers
+	bishops = board->pieces[BISHOP] | board->pieces[QUEEN];
+	rooks = board->pieces[ROOK] | board->pieces[QUEEN];
+
+	// Let occupied suppose that the move was actually made
+	occupied = (board->colours[WHITE] | board->colours[BLACK]);
+	occupied = (occupied ^ (1ull << from)) | (1ull << to);
+	if (type == ENPASS_MOVE) occupied ^= (1ull << board->epSquare);
+
+	// Get all pieces which attack the target square. And with occupied
+	// so that we do not let the same piece attack twice
+	attackers = allAttackersToSquare(board, occupied, to) & occupied;
+
+	// Now our opponents turn to recapture
+	colour = !board->turn;
+
+	while (1) {
+
+		// If we have no more attackers left we lose
+		myAttackers = attackers & board->colours[colour];
+		if (myAttackers == 0ull) break;
+
+		// Find our weakest piece to attack with
+		for (nextVictim = PAWN; nextVictim <= QUEEN; nextVictim++)
+			if (myAttackers & board->pieces[nextVictim])
+				break;
+
+		// Remove this attacker from the occupied
+		occupied ^= (1ull << getlsb(myAttackers & board->pieces[nextVictim]));
+
+		// A diagonal move may reveal bishop or queen attackers
+		if (nextVictim == PAWN || nextVictim == BISHOP || nextVictim == QUEEN)
+			attackers |= bishopAttacks(to, occupied) & bishops;
+
+		// A vertical or horizontal move may reveal rook or queen attackers
+		if (nextVictim == ROOK || nextVictim == QUEEN)
+			attackers |= rookAttacks(to, occupied) & rooks;
+
+		// Make sure we did not add any already used attacks
+		attackers &= occupied;
+
+		// Swap the turn
+		colour = !colour;
+
+		// Negamax the balance and add the value of the next victim
+		balance = -balance - 1 - SEEPieceValues[nextVictim];
+
+		// If the balance is non negative after giving away our piece then we win
+		if (balance >= 0) {
+
+			// As a slide speed up for move legality checking, if our last attacking
+			// piece is a king, and our opponent still has attackers, then we've
+			// lost as the move we followed would be illegal
+			if (nextVictim == KING && (attackers & board->colours[colour]))
+				colour = !colour;
+
+			break;
+		}
+	}
+
+	// Side to move after the loop loses
+	return board->turn != colour;
+}
+*/

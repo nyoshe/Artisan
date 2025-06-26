@@ -8,6 +8,8 @@
 #include "Memory.h"
 #include "Misc.h"
 
+
+
 enum class TType : u8 {
 	INVALID,
 	EXACT,
@@ -50,6 +52,7 @@ struct SearchStack {
 	int improving_rate = 0;
 	bool improving = false;
 	bool in_check = false;
+	Move current_move = Move(0, 0);
 	StaticVector<Move> moves;
 	StaticVector<Move> seen_quiets;
 	StaticVector<Move> seen_noisies;
@@ -64,6 +67,7 @@ struct SearchStack {
 		improving_rate = 0;
 		improving = false;
 		in_check = false;
+		current_move = Move(0, 0);
 	}
 };
 
@@ -116,6 +120,15 @@ public:
 			for (auto& j : i) {
 				for (auto& k : j) {
 					k = 0;
+				}
+			}
+		}
+		for (auto& i : capture_history) {
+			for (auto& j : i) {
+				for (auto& k : j) {
+					for (auto& l : k) {
+						l = 0;
+					}
 				}
 			}
 		}

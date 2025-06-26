@@ -146,15 +146,15 @@ public:
     void loadFen(std::istringstream& fen_stream);
     void loadBoard(chess::Board new_board);
     // Returns a Move object corresponding to the given UCI string (e.g. "e2e4", "e7e8q").
-    Move moveFromUCI(const std::string& uci);
+    [[nodiscard]] Move moveFromUCI(const std::string& uci);
     void loadUci(std::istringstream& uci);
     void genPseudoLegalCaptures(StaticVector<Move>& moves);
     void serializeMoves(Piece piece, StaticVector<Move>& moves, bool quiet);
 
     void genPseudoLegalMoves(StaticVector<Move>& moves);
     void filterToLegal(StaticVector<Move>& pseudo_moves);
-    bool isLegal(Move move);
-
+    [[nodiscard]] bool isLegal(Move move);
+    [[nodiscard]] int staticExchangeEvaluation(Board* board, uint16_t move, int threshold);
 
     //get index of all attackers of a square
     [[nodiscard]] u64 getAttackers(int square) const;
@@ -177,7 +177,7 @@ public:
 	    return us == eWhite ? eval : -eval;
     };
 
-    int getPhase() const {
+    [[nodiscard]] int getPhase() const {
         return 24 -
             BB::popcnt(boards[eWhite][eKnight]) -
             BB::popcnt(boards[eWhite][eBishop]) -
@@ -194,9 +194,9 @@ public:
     void printMoves() const;
     void reset();
 
-    std::vector<Move> getLastMoves(int n_moves) const;
+    [[nodiscard]] std::vector<Move> getLastMoves(int n_moves) const;
 
-    u64 getHash() const;
+    [[nodiscard]] u64 getHash() const;
     bool isRepetition(int n) const;
 
     [[nodiscard]] u64 calcHash() const;
