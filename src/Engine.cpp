@@ -154,6 +154,8 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 	const bool is_pv = alpha != beta - 1;
 	if (is_pv) pv_length[search_ply] = 0;
 	bool is_root = search_ply == 0;
+	(ss + 1)->killers[0] = Move(0, 0);
+	(ss + 1)->killers[1] = Move(0, 0);
 
 	nodes++;
 	if (b.isRepetition(is_root ? 2 : 1) || b.half_move >= 100) {

@@ -8,7 +8,7 @@
 #include "Memory.h"
 #include "Misc.h"
 
-
+int constexpr good_cap_cutoff = -11000;
 
 enum class TType : u8 {
 	INVALID,
@@ -41,7 +41,7 @@ struct TimeControl {
 	int movetime = 0;
 };
 struct UciOptions {
-	u64 hash_size = 64;
+	u64 hash_size = 16;
 	bool debug = false;
 	bool uci = false;
 };
@@ -61,8 +61,8 @@ struct SearchStack {
 		moves.clear();
 		seen_quiets.clear();
 		seen_noisies.clear();
-		killers[0] = Move();
-		killers[1] = Move();
+		//killers[0] = Move();
+		//killers[1] = Move();
 		static_eval = 0;
 		improving_rate = 0;
 		improving = false;
@@ -166,8 +166,9 @@ public:
 enum class MoveStage {
 	ttMove,
 	promotion,
-	captures,
+	good_captures,
 	killer,
+	bad_captures,
 	history
 };
 
@@ -194,7 +195,7 @@ public:
 					*pos_best = ss->moves.back();
 					ss->moves.pop_back();
 
-					stage = MoveStage::captures;
+					stage = MoveStage::good_captures;
 					return out;
 				}
 			}
@@ -212,9 +213,9 @@ public:
 				return out;
 			}
 			*/
-			stage = MoveStage::captures;
+			stage = MoveStage::good_captures;
 			[[fallthrough]];
-		case MoveStage::captures: {
+		case MoveStage::good_captures: {
 			int max = -100000;
 			int index = 0;
 			
@@ -239,23 +240,52 @@ public:
 
 			}
 		}
-
 			stage = MoveStage::killer;
 			[[fallthrough]];
+
 		case MoveStage::killer:
-			if ((b.ply - e.start_ply > 2) && killer_slot < 2) {
+			if ((b.ply - e.start_ply > 2) && killer_slot < 2 && (ss - 2)->killers[killer_slot]) {
 				Move killer = (ss - 2)->killers[killer_slot++];
 				auto pos_best = std::find(ss->moves.begin(), ss->moves.end(), killer);
-				if (killer && pos_best != ss->moves.end()) {
+				if (pos_best != ss->moves.end()) {
 					out = *pos_best;
 					*pos_best = ss->moves.back();
 					ss->moves.pop_back();
 					return out;
 				}
 			}
-
 			stage = MoveStage::history;
 			[[fallthrough]];
+/*
+		case MoveStage::bad_captures: {
+			int max = -100000;
+			int index = 0;
+
+			for (int i = 0; i < ss->moves.size(); i++) {
+				if (ss->moves[i].captured() || ss->moves[i].promotion()) {
+					//piece_vals[moves[i].promotion()] * 256 +
+					Move m = ss->moves[i];
+					int val = piece_vals[m.promotion()] + (m.captured() ? piece_vals[m.captured()] * 8 +
+						e.capture_history[b.us][m.piece()][m.captured()][m.to()] : 0);
+					if (val > max) {
+						max = val;
+						index = i;
+					}
+				}
+
+			}
+			if (max != -100000) {
+				out = ss->moves[index];
+				ss->moves[index] = ss->moves.back();
+				ss->moves.pop_back();
+				return out;
+
+			}
+			
+		}
+			stage = MoveStage::history;
+			[[fallthrough]];
+*/
 		case MoveStage::history: {
 			int max = -100000;
 			int index = 0;
