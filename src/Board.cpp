@@ -783,10 +783,8 @@ u64 Board::getAttackers(int square, bool side) const {
 	attackers |= BB::knight_attacks[square] & boards[!side][eKnight];
 	//check bishops
 	attackers |= BB::get_bishop_attacks(square, all_occ) & ~our_occ & (boards[!side][eBishop] | boards[!side][eQueen]);
-
 	// Check rooks
 	attackers |= BB::get_rook_attacks(square, all_occ) & ~our_occ & (boards[!side][eRook] | boards[!side][eQueen]);
-
 
 	// Check king  
 	attackers |= BB::king_attacks[square] & boards[!side][eKing];
@@ -1193,7 +1191,7 @@ int Board::evalUpdate()  {
 	return out;
 }
 /*
-int Board::staticExchangeEvaluation(Board* board, Move move, int threshold) {
+int Board::staticExchangeEvaluation(Move move, int threshold) {
 
 	int from, to, type, colour, balance, nextVictim;
 	uint64_t bishops, rooks, occupied, attackers, myAttackers;
@@ -1216,15 +1214,15 @@ int Board::staticExchangeEvaluation(Board* board, Move move, int threshold) {
 	if (balance < 0) return 0;
 
 	// Worst case is losing the moved piece
-	balance -= SEEPieceValues[nextVictim];
+	balance -= see_piece_vals[nextVictim];
 
 	// If the balance is positive even if losing the moved piece,
 	// the exchange is guaranteed to beat the threshold.
 	if (balance >= 0) return 1;
 
 	// Grab sliders for updating revealed attackers
-	bishops = board->pieces[BISHOP] | board->pieces[QUEEN];
-	rooks = board->pieces[ROOK] | board->pieces[QUEEN];
+	bishops = boards[us][eBishop] | boards[us][eQueen];
+	rooks = boards[us][eRook] | boards[us][eBishop];
 
 	// Let occupied suppose that the move was actually made
 	occupied = (board->colours[WHITE] | board->colours[BLACK]);
@@ -1233,10 +1231,10 @@ int Board::staticExchangeEvaluation(Board* board, Move move, int threshold) {
 
 	// Get all pieces which attack the target square. And with occupied
 	// so that we do not let the same piece attack twice
-	attackers = allAttackersToSquare(board, occupied, to) & occupied;
+	attackers = getAttackers(to, occupied);
 
 	// Now our opponents turn to recapture
-	colour = !board->turn;
+	colour = !us;
 
 	while (1) {
 

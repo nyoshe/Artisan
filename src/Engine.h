@@ -8,7 +8,7 @@
 #include "Memory.h"
 #include "Misc.h"
 
-int constexpr good_cap_cutoff = -11000;
+int constexpr good_cap_cutoff = -16000;
 
 enum class TType : u8 {
 	INVALID,
@@ -216,14 +216,14 @@ public:
 			stage = MoveStage::good_captures;
 			[[fallthrough]];
 		case MoveStage::good_captures: {
-			int max = -100000;
+			int max = good_cap_cutoff;
 			int index = 0;
 			
 			for (int i = 0; i < ss->moves.size(); i++) {
 				if (ss->moves[i].captured() || ss->moves[i].promotion()) {
 					//piece_vals[moves[i].promotion()] * 256 +
 					Move m = ss->moves[i];
-					int val = piece_vals[m.promotion()] + (m.captured() ? piece_vals[m.captured()] * 8 +
+					int val = see_piece_vals[m.promotion()] + (m.captured() ? see_piece_vals[m.captured()] * 8 +
 						e.capture_history[b.us][m.piece()][m.captured()][m.to()] : 0);
 					if (val > max) {
 						max = val;
@@ -232,7 +232,7 @@ public:
 				}
 
 			}
-			if (max != -100000) {
+			if (max != good_cap_cutoff) {
 				out = ss->moves[index];
 				ss->moves[index] = ss->moves.back();
 				ss->moves.pop_back();
@@ -254,9 +254,9 @@ public:
 					return out;
 				}
 			}
-			stage = MoveStage::history;
+			stage = MoveStage::bad_captures;
 			[[fallthrough]];
-/*
+
 		case MoveStage::bad_captures: {
 			int max = -100000;
 			int index = 0;
@@ -265,7 +265,7 @@ public:
 				if (ss->moves[i].captured() || ss->moves[i].promotion()) {
 					//piece_vals[moves[i].promotion()] * 256 +
 					Move m = ss->moves[i];
-					int val = piece_vals[m.promotion()] + (m.captured() ? piece_vals[m.captured()] * 8 +
+					int val = see_piece_vals[m.promotion()] + (m.captured() ? see_piece_vals[m.captured()] * 8 +
 						e.capture_history[b.us][m.piece()][m.captured()][m.to()] : 0);
 					if (val > max) {
 						max = val;
@@ -285,7 +285,7 @@ public:
 		}
 			stage = MoveStage::history;
 			[[fallthrough]];
-*/
+
 		case MoveStage::history: {
 			int max = -100000;
 			int index = 0;

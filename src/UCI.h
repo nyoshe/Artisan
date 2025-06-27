@@ -90,6 +90,7 @@ public:
                 iss >> mode;
                 options.debug = (mode == "on");
             }
+
             else if (token == "test")
             {
                 /*

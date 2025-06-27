@@ -266,12 +266,12 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 				b.undoMove();
 				continue;
 			}
-			/*
-			if (moves_searched > (3.0 + (depth_left * depth_left)) / (2.0 - ss->improving_rate) && depth_left <= 4) {
+			
+			if (ss->seen_quiets.size() > (1.0 + (depth_left * depth_left)) && depth_left <= 4) {
 				b.undoMove();
 				continue;
 			}
-			*/
+			
 			//history pruning
 			
 			if (raised_alpha && moves_searched > 4 && depth_left < 4 && history_table[!b.us][move.from()][move.to()] < -1024 * depth_left) {
