@@ -173,10 +173,10 @@ enum class MoveStage {
 };
 
 class MoveGen {
-	MoveStage stage = MoveStage::ttMove;
 	int killer_slot = 0;
 
 public:
+	MoveStage stage = MoveStage::ttMove;
 	Move getNext(Engine& e, Board& b, SearchStack* ss) {
 
 		if (ss->moves.empty()) {

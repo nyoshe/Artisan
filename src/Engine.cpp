@@ -188,7 +188,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 		}
 		if (past_stack != nullptr) {
 			ss->improving_rate = std::clamp(past_stack->improving_rate + (ss->static_eval - past_stack->static_eval) / 50, -100, 100);
-			ss->improving = ss->improving_rate > 0;
+			ss->improving = (ss->static_eval - past_stack->static_eval) > 0;
 		}
 	}
 
@@ -282,19 +282,26 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 		
 
 		//search reductions
-		if (moves_searched > 2 + 2 * is_pv + !ss->improving && !move_is_check && depth_left > 2 && !is_root) {
+		if (moves_searched > 2 + 2 * is_pv + ss->improving && depth_left > 2 && !is_root) {
 			int R = 0;
 			
 			if (!is_quiet) {
 				R = static_cast<int>(0.5 + log_table[depth_left] * log_table[moves_searched] / 3.5);
+				//R = 3 - capture_history[b.us][move.piece()][move.captured()][move.to()] / 6000;
+				//R -= move_is_check;
+				//R += !is_pv;
 			} else {
 				R = static_cast<int>(2.0 + log_table[depth_left] * log_table[moves_searched] / 2.5);
+				
+				//R += move_is_check && move.piece() == eKing;
+				//R += move_gen.stage == MoveStage::killer;
+				//R -= history_table[!b.us][move.from()][move.to()] / 5000;
+				
 			}
-			
-			//R -= history_table[!b.us][move.from()][move.to()] / 8870;
 			R += !is_pv;
-			//R -= is_pv;
 			R += cut_node;
+			//R -= history_table[!b.us][move.from()][move.to()] / 8870;
+
 			//R += tt_entry ? (tt_entry.best_move.captured() || tt_entry.best_move.promotion()) : 0;
 
 
