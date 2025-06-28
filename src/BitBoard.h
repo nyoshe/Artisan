@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <iostream>
 #include <vector>
-#include <intrin.h>
+//#include <intrin.h>
 #include "Tables.h"
 
 #include "Misc.h"
@@ -137,7 +137,7 @@ namespace BB {
 #elif defined(__GNUC__) || defined(__clang__)
             idx = __builtin_ctzll(board);
             board &= board - 1;
-			return idx;
+			//return idx;
 #else
         // Portable fallback (not using intrinsics)
         for (int i = 0; i < 64; ++i) {

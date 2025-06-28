@@ -3,7 +3,7 @@
 #include <sstream>
 #include "Board.h"
 #include "include/chess.hpp"
-
+#include <list>
 // Struct for tunable parameters
 struct TunableParam
 {

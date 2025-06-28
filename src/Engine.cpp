@@ -286,8 +286,8 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 			int R = 0;
 			
 			if (!is_quiet) {
-				R = static_cast<int>(0.5 + log_table[depth_left] * log_table[moves_searched] / 3.5);
-				//R = 3 - capture_history[b.us][move.piece()][move.captured()][move.to()] / 5000;
+				//R = static_cast<int>(0.5 + log_table[depth_left] * log_table[moves_searched] / 3.5);
+				R = 3 - capture_history[b.us][move.piece()][move.captured()][move.to()] / 5000;
 				R -= move_is_check;
 				//R += !is_pv;
 			} else {
@@ -505,9 +505,9 @@ void Engine::printPV(int score) {
 			<< (score == 0 ? "\x1b[38;5;226m" : (score > 0 ? "\x1b[38;5;40m" : "\x1b[38;5;160m"))
 
 			<< std::setw(6) << std::right << std::setprecision(2) << std::fixed << static_cast<float>(score) / 100.0 << "\x1b[0m"
-			<< std::setw(9) << std::right << std::setprecision(3) << static_cast<float>(std::clock() - start_time) / 1000.0 << "s"
+			<< std::setw(9) << std::right << std::setprecision(3) << static_cast<float>(std::clock() - start_time) / CLOCKS_PER_SEC << "s"
 			<< std::setw(10) << std::setprecision(3) <<  nodes / 1e6 << "m"
-			<< std::setw(9) << std::setprecision(2) << (static_cast<float>(nodes) / (1000.0 * static_cast<float>(std::clock() - start_time))) << "mn/s"
+			<< std::setw(9) << std::setprecision(2) << (static_cast<float>(nodes) / ((1000000.0 / CLOCKS_PER_SEC) * static_cast<float>(std::clock() - start_time))) << "mn/s"
 			<< std::setw(8) << std::setprecision(2) << static_cast<float>(hash_count * 100.0 / static_cast<float>(tt.size())) << "%"
 			<< "   ";
 	}
@@ -589,7 +589,7 @@ bool Engine::checkTime(bool strict) {
 void Engine::calcTime() {
 	time_over = false;
 	if (tc.movetime) {
-		max_time = tc.movetime;
+		max_time = tc.movetime * CLOCKS_PER_SEC / 1000;
 		return;
 	}
 	int search_ply = b.ply - start_ply;
@@ -610,6 +610,8 @@ void Engine::calcTime() {
 	} else {
 		max_time = (total_time * factor) + inc * 0.80;
 	}
+
+	max_time = max_time * CLOCKS_PER_SEC / 1000;
 }
 
 void Engine::updatePV(int depth, Move move) {

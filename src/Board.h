@@ -6,9 +6,11 @@
 #include "Tables.h"
 #include <iostream>
 #include <iomanip>
-#include <io.h>
+#include <cmath>
 #include <fcntl.h>
+#if defined(_MSC_VER)
 #include <Windows.h>
+#endif
 #include <stdio.h>
 #include <vector>
 #include <array>
@@ -75,8 +77,7 @@ struct BoardState {
     BoardState(int ep_square, u8 castle_flags, Move move, int eval, u64 hash, u16 half_move)
         : ep_square(ep_square), castle_flags(castle_flags), move(move), eval(eval), hash(hash), half_move(half_move) {
     };
-
-    auto operator<=>(const BoardState&) const = default;
+    auto operator<=>(const BoardState&) const = delete;
 };
 
 struct Zobrist {

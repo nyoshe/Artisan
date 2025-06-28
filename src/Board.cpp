@@ -54,7 +54,6 @@ bool Board::operator==(const Board& other) const {
 		us != other.us ||
 		castle_flags != other.castle_flags ||
 		ep_square != other.ep_square ||
-		state_stack != other.state_stack ||
 		hash != other.hash) {
 		return false;
 	}
@@ -246,7 +245,9 @@ void Board::undoMove() {
 }
 
 void Board::printBoard() const {
+#if defined(_MSC_VER)
 	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+#endif
 	bool color = true;
 
 	std::cout << "  a b c d e f g h \n";
@@ -286,10 +287,17 @@ void Board::printBoard() const {
 				else if (boards[side][eKnight] & mask_pos) pieceChar = const_cast<wchar_t*>(L"\u265E ");
 				else if (boards[side][ePawn] & mask_pos) pieceChar = const_cast<wchar_t*>(L"\u265F ");
 
+#if defined(_MSC_VER)
 				if (pieceChar) {
 					WriteConsoleW(hOut, pieceChar, wcslen(pieceChar), nullptr, nullptr);
 					break;
 				}
+#elif defined(__GNUC__) || defined(__clang__)
+				if (pieceChar) {
+					std::wcout << pieceChar;
+					break;
+				}
+#endif
 			}
 
 			color = !color;
@@ -505,6 +513,7 @@ Move Board::moveFromUCI(const std::string& uci) {
 #ifdef DEBUG
 	throw std::logic_error("invalid move!");
 #endif
+	return Move(0, 0);
 }
 
 void Board::loadUci(std::istringstream& iss) {

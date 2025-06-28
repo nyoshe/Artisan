@@ -7,7 +7,7 @@
 #include <algorithm>
 #include "Engine.h"
 #include <signal.h>
-#include <conio.h>
+
 #include <mutex>
 
 //#include "../nchess/imgui/imgui.h"
@@ -172,13 +172,13 @@ Moves; g8f6 d5d3 e8g8 b5c4 c6b4
                 int eval_1 = engine_.b.getEval();
                 EvalCounts ec1 = engine_.b.eval_c;
 
-                std::istringstream go_stream("go movetime 500000");
+                std::istringstream go_stream("go movetime 1000");
                 handleGo(go_stream);
 
                 while (true) {
                     for (auto& position : fens) {
                         engine_ = Engine(options);
-                        std::istringstream ss(position);
+                        std::istringstream ss("fen " + position);
                         setupBoard(ss);
                         std::istringstream go_ss("go movetime 1000");
                         handleGo(go_ss);
@@ -253,5 +253,3 @@ private:
 
     }
 };
-
-UCI* UCI::instance = nullptr;
