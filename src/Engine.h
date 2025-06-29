@@ -87,7 +87,7 @@ class Engine {
 	// Engine state variables
 	int max_depth = 0;
 	int sel_depth = 0;
-	int nodes = 0;
+	
 	Move root_best;
 	Move expected_response;
 
@@ -96,6 +96,7 @@ class Engine {
 	int max_time = 0;
 	std::vector<PerfT> perf_values;
 	int pos_count = 0;
+	bool do_bench = false;
 
 
 	void perftSearch(int depth);
@@ -106,7 +107,7 @@ public:
 	
 	std::array<std::array<std::array<int, 64>, 64>, 2> history_table;
 	std::array<std::array < std::array<std::array<int, 64>, 7>, 7>, 2> capture_history;
-
+	int nodes = 0;
 	int hash_hits = 0;
 	int start_ply = 0;
 	Board b;
@@ -115,7 +116,10 @@ public:
 	Engine(UciOptions options) {
 		uci_options = options;
 		tt.resize((uci_options.hash_size * 1024 * 1024) / sizeof(TTEntry));
-		
+		reset();
+	}
+	void reset() {
+
 		for (auto& i : history_table) {
 			for (auto& j : i) {
 				for (auto& k : j) {
@@ -147,6 +151,22 @@ public:
 
 	void initSearch();
 	Move search(int depth);
+	void bench() {
+		auto start_bench_time = std::clock();
+		int total_nodes = 0;
+		do_bench = true;
+		for (auto& position : bench_fens) {
+			tc.movetime = INT32_MAX;
+			b.reset();
+			std::istringstream iss(position);
+			setBoardFEN(iss);
+			search(14);
+			total_nodes += nodes;
+		}
+		int nps = total_nodes / (static_cast<float>(std::clock() - start_bench_time) / CLOCKS_PER_SEC);
+
+		std::cout << total_nodes << " nodes " << nps << " nps" << std::endl;
+	}
 	std::vector<Move> getPrincipalVariation() const;
 
 	void printPV(int score);

@@ -63,31 +63,33 @@ void Engine::initSearch() {
 }
 
 Move Engine::search(int depth) {
-	
 	initSearch();
-	if (!uci_options.uci) {
+	if (!uci_options.uci && !do_bench) {
 		b.printBoard();
 		std::cout << "    depth   score      time      nodes          nps     hash   pv\n"
 			         "-----------------------------------------------------------------\n";
 	}
+
 	b.genPseudoLegalMoves(search_stack->moves);
 	b.filterToLegal(search_stack->moves);
-	
-	calcTime();
-
-	max_depth = 2;
-	int score = alphaBeta(-100000, 100000, max_depth, false, search_stack);
 
 	if (search_stack->moves.size() == 1) {
-		printPV(score);
+		printPV(alphaBeta(-100000, 100000, max_depth, false, search_stack));
 		return search_stack->moves[0];
 	}
+
+	if (depth == -1) calcTime();
+	else max_time = -1;
+
+	max_depth = 1;
+	int score = alphaBeta(-100000, 100000, max_depth, false, search_stack);
 
 	Move best_move = pv_table[0][0];
 	if (!best_move) best_move = search_stack->moves.front();
 	bool add_time = false;
 
-	for (max_depth = 2; max_depth < MAX_PLY; max_depth++) {
+	for (max_depth = 1; max_depth < ((depth == -1) ? MAX_PLY : depth); max_depth++) {
+
 		// Keep searching until we get a score within our window
 		search_stack->clear();
 		pv_length[0] = 0;
@@ -124,7 +126,7 @@ Move Engine::search(int depth) {
 				}
 			} 
 			return best_move;
-		} else if ((std::clock() - start_time) > max_time / 2.0) {
+		} else if ((std::clock() - start_time) > max_time / 2.0 && max_time != -1) {
 			if (pv_table[0][0]) {
 				best_move = pv_table[0][0];
 				expected_response = pv_table[0][1];
@@ -288,7 +290,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 			if (!is_quiet) {
 				//R = static_cast<int>(0.5 + log_table[depth_left] * log_table[moves_searched] / 3.5);
 				R = 3 - capture_history[b.us][move.piece()][move.captured()][move.to()] / 5000;
-				R -= move_is_check;
+				
 				//R += !is_pv;
 			} else {
 				R = static_cast<int>(2.0 + log_table[depth_left] * log_table[moves_searched] / 2.5);
@@ -300,7 +302,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 				R += cut_node;
 				R += !ss->improving;
 			}
-			
+			R -= move_is_check;
 			R += !is_pv;
 			//R -= move_is_check;
 			//R -= history_table[!b.us][move.from()][move.to()] / 8870;
@@ -481,9 +483,9 @@ std::vector<Move> Engine::getPrincipalVariation() const {
 }
 
 void Engine::printPV(int score) {
+	if (do_bench) return;
 	std::vector<Move> pv = getPrincipalVariation();
 
-		
 	//output UCI string
 	if (uci_options.uci) {
 		std::cout
@@ -577,7 +579,7 @@ bool Engine::checkTime(bool strict) {
 	if (time_over) return true;
 	counter++;
 	if (strict || (counter & 0x80)) {
-		if ((std::clock() - start_time) > max_time) {
+		if ((std::clock() - start_time) > max_time && max_time != -1) {
 			time_over = true;
 			return true;
 		}
@@ -589,18 +591,22 @@ bool Engine::checkTime(bool strict) {
 void Engine::calcTime() {
 	time_over = false;
 	if (tc.movetime) {
-		max_time = tc.movetime * CLOCKS_PER_SEC / 1000;
+		max_time = tc.movetime * (CLOCKS_PER_SEC / 1000);
 		return;
 	}
 	int search_ply = b.ply - start_ply;
 
 	double num_moves = static_cast<double>(search_stack->moves.size());
 	double factor = num_moves / 1000.0;
-	if (expected_response != b.state_stack.back().move) {
-		factor *= 2.0;
-	} else if (expected_response.captured()) {
-		factor /= 2.0;
+	if (!b.state_stack.empty()) {
+		if (expected_response != b.state_stack.back().move) {
+			factor *= 2.0;
+		}
+		else if (expected_response.captured()) {
+			factor /= 2.0;
+		}
 	}
+	
 
 	double total_time = b.us ? tc.btime : tc.wtime;
 	double inc = b.us ? tc.binc : tc.winc;
