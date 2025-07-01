@@ -34,7 +34,7 @@ all: build copy_exe
 # Configure project using CMake
 configure:
 	@echo "Configuring project with CMake using preset: $(PRESET)..."
-	@$(CMAKE_PATH) --preset $(PRESET) -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$(BUILD_DIR)/$(PRESET)
+	@$(CMAKE_PATH) --preset $(PRESET)
 
 # Build the project
 build: configure

@@ -362,14 +362,14 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 				}
 
 			} else {
-				//int bonus = std::min(7 * depth_left * depth_left + 274 * depth_left - 182, 2048);
-				int bonus = std::min(280 * depth_left - 432, 2576);
+				int bonus = std::min(7 * depth_left * depth_left + 274 * depth_left - 182, 2048);
+				//int bonus = std::min(280 * depth_left - 432, 2576);
 				bonus = std::clamp(bonus, -16384, 16384);
 				capture_history[b.us][move.piece()][move.captured()][move.to()] +=
 					bonus - capture_history[b.us][move.piece()][move.captured()][move.to()] * abs(bonus) / 16384;
 			}
-			//int malus = -std::min(5 * depth_left * depth_left + 283 * depth_left + 169, 1024);
-			int malus = -std::min(343 * depth_left - 161, 1239);
+			int malus = -std::min(5 * depth_left * depth_left + 283 * depth_left + 169, 1024);
+			//int malus = -std::min(343 * depth_left - 161, 1239);
 			for (auto& capture : ss->seen_noisies) {
 				malus = std::clamp(malus, -16384, 16384);
 				capture_history[b.us][capture.piece()][capture.captured()][capture.to()] +=
