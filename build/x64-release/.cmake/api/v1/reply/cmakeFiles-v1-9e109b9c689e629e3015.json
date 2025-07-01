@@ -5,7 +5,8 @@
 			"path" : "CMakeLists.txt"
 		},
 		{
-			"path" : "CMakeFiles/3.31.6-msvc6/CMakeSystem.cmake"
+			"isGenerated" : true,
+			"path" : "build/x64-release/CMakeFiles/3.31.6-msvc6/CMakeSystem.cmake"
 		},
 		{
 			"isCMake" : true,
@@ -18,10 +19,12 @@
 			"path" : "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.31/Modules/Platform/Windows-Initialize.cmake"
 		},
 		{
-			"path" : "CMakeFiles/3.31.6-msvc6/CMakeCCompiler.cmake"
+			"isGenerated" : true,
+			"path" : "build/x64-release/CMakeFiles/3.31.6-msvc6/CMakeCCompiler.cmake"
 		},
 		{
-			"path" : "CMakeFiles/3.31.6-msvc6/CMakeCXXCompiler.cmake"
+			"isGenerated" : true,
+			"path" : "build/x64-release/CMakeFiles/3.31.6-msvc6/CMakeCXXCompiler.cmake"
 		},
 		{
 			"isCMake" : true,
@@ -89,7 +92,8 @@
 			"path" : "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.31/Modules/Platform/Windows-MSVC.cmake"
 		},
 		{
-			"path" : "CMakeFiles/3.31.6-msvc6/CMakeRCCompiler.cmake"
+			"isGenerated" : true,
+			"path" : "build/x64-release/CMakeFiles/3.31.6-msvc6/CMakeRCCompiler.cmake"
 		},
 		{
 			"isCMake" : true,
@@ -218,7 +222,7 @@
 	"kind" : "cmakeFiles",
 	"paths" : 
 	{
-		"build" : "C:/Users/niayo/source/repos/Artisan",
+		"build" : "C:/Users/niayo/source/repos/Artisan/build/x64-release",
 		"source" : "C:/Users/niayo/source/repos/Artisan"
 	},
 	"version" : 

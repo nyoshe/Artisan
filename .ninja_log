@@ -1,0 +1,9 @@
+# ninja log v6
+23	984	7730467637322810	src/CMakeFiles/Artisan.dir/Move.cpp.obj	9103a8577fdc0b70
+28	2531	7730467637377895	src/CMakeFiles/Artisan.dir/MoveGen.cpp.obj	87506c321d876034
+34	2595	7730467637432101	src/CMakeFiles/Artisan.dir/UCI.cpp.obj	6e211422b70ef7df
+15	3125	7730467637247678	src/CMakeFiles/Artisan.dir/Engine.cpp.obj	5da27324577d171b
+9	3316	7730467637184957	src/CMakeFiles/Artisan.dir/Board.cpp.obj	5c19b742f2d84477
+4	3365	7730467637129730	src/CMakeFiles/Artisan.dir/Artisan.cpp.obj	3e9fcd5cdffe4ed9
+41	2635	7730467637498362	src/CMakeFiles/Artisan.dir/Tuner.cpp.obj	6eea3b2eb8cf738b
+3365	3513	7730467670743384	src/Artisan.exe	66b1b452f154b92e

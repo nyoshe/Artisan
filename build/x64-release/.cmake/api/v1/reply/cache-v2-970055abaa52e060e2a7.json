@@ -11,7 +11,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/niayo/source/repos/Artisan"
+			"value" : "C:/Users/niayo/source/repos/Artisan/build/x64-release"
 		},
 		{
 			"name" : "Artisan_IS_TOP_LEVEL",
@@ -75,7 +75,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "c:/Users/niayo/source/repos/Artisan"
+			"value" : "c:/Users/niayo/source/repos/Artisan/build/x64-release"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -615,7 +615,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/niayo/source/repos/Artisan/CMakeFiles/pkgRedirects"
+			"value" : "C:/Users/niayo/source/repos/Artisan/build/x64-release/CMakeFiles/pkgRedirects"
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -687,7 +687,7 @@
 				}
 			],
 			"type" : "PATH",
-			"value" : "C:/Users/niayo/source/repos/Artisan"
+			"value" : "C:/Users/niayo/source/repos/Artisan/install/x64-release"
 		},
 		{
 			"name" : "CMAKE_LINKER",

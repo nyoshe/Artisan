@@ -3,11 +3,11 @@
 # Configuration variables
 CMAKE_PATH ?= cmake
 NINJA_PATH ?= ninja
-BUILD_DIR ?= out/build
-INSTALL_DIR ?= out/install
+BUILD_DIR ?= build
+INSTALL_DIR ?= install
 
 # Output executable name (can be overridden with EXE=name)
-EXE ?= artisan
+EXE ?= Artisan
 
 # Detect OS
 ifeq ($(OS),Windows_NT)
@@ -34,7 +34,7 @@ all: build copy_exe
 # Configure project using CMake
 configure:
 	@echo "Configuring project with CMake using preset: $(PRESET)..."
-	@$(CMAKE_PATH) --preset $(PRESET)
+	@$(CMAKE_PATH) --preset $(PRESET) 
 
 # Build the project
 build: configure
@@ -43,9 +43,16 @@ build: configure
 
 # Copy the executable to the Makefile directory with the specified name
 copy_exe:
-	@echo "Copying executable to $(OUTPUT_BIN)..."
-	@cp $(BUILD_DIR)/$(PRESET)/src/artisan$(EXE_EXT) $(OUTPUT_BIN)
-	@echo "Build complete: $(EXE)$(EXE_EXT)"
+	@echo "Locating executable..."
+	@EXEC_PATH=$$(find $(BUILD_DIR)/$(PRESET) -name "Artisan$(EXE_EXT)" -type f | head -1); \
+	if [ -n "$$EXEC_PATH" ]; then \
+		echo "Found at $$EXEC_PATH"; \
+		cp "$$EXEC_PATH" $(OUTPUT_BIN); \
+		echo "Build complete: $(EXE)$(EXE_EXT)"; \
+	else \
+		echo "ERROR: Could not find the Artisan executable!"; \
+		exit 1; \
+	fi
 
 # Clean build directory and executable
 clean:

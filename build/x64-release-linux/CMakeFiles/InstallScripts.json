@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"/mnt/c/Users/niayo/source/repos/Artisan/build/x64-release-linux/cmake_install.cmake",
+		"/mnt/c/Users/niayo/source/repos/Artisan/build/x64-release-linux/src/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

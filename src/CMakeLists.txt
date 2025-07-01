@@ -17,6 +17,10 @@ add_executable (Artisan "Artisan.cpp" "Artisan.h"
     "Tuner.h"
     "Tuner.cpp")
 
+set_target_properties(Artisan PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+)
+
 if(CMAKE_SYSTEM MATCHES Linux)
     target_link_libraries(Artisan PRIVATE Threads::Threads)
 

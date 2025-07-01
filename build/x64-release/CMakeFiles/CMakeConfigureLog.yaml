@@ -8,9 +8,6 @@ events:
       - "CMakeLists.txt:13 (project)"
     message: |
       The system is: Windows - 10.0.26100 - AMD64
-
----
-events:
   -
     kind: "message-v1"
     backtrace:
@@ -21,7 +18,7 @@ events:
     message: |
       Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
       Compiler: C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/bin/clang-cl.exe 
-      Build flags: --target=amd64-pc-windows-msvc;-fdiagnostics-absolute-paths;/DWIN32;/D_WINDOWS;/W3
+      Build flags: --target=amd64-pc-windows-msvc;-fdiagnostics-absolute-paths
       Id flags:  
       
       The output was:
@@ -31,7 +28,7 @@ events:
       Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CMakeCCompilerId.exe"
       
       The C compiler identification is Clang, found in:
-        C:/Users/niayo/source/repos/Artisan/CMakeFiles/3.31.6-msvc6/CompilerIdC/CMakeCCompilerId.exe
+        C:/Users/niayo/source/repos/Artisan/build/x64-release/CMakeFiles/3.31.6-msvc6/CompilerIdC/CMakeCCompilerId.exe
       
   -
     kind: "message-v1"
@@ -55,7 +52,7 @@ events:
     message: |
       Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
       Compiler: C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/bin/clang-cl.exe 
-      Build flags: --target=amd64-pc-windows-msvc;-fdiagnostics-absolute-paths;/DWIN32;/D_WINDOWS;/W3;/GR;/EHsc
+      Build flags: --target=amd64-pc-windows-msvc;-fdiagnostics-absolute-paths
       Id flags:  
       
       The output was:
@@ -65,7 +62,7 @@ events:
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CMakeCXXCompilerId.exe"
       
       The CXX compiler identification is Clang, found in:
-        C:/Users/niayo/source/repos/Artisan/CMakeFiles/3.31.6-msvc6/CompilerIdCXX/CMakeCXXCompilerId.exe
+        C:/Users/niayo/source/repos/Artisan/build/x64-release/CMakeFiles/3.31.6-msvc6/CompilerIdCXX/CMakeCXXCompilerId.exe
       
   -
     kind: "message-v1"
@@ -88,8 +85,8 @@ events:
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "C:/Users/niayo/source/repos/Artisan/CMakeFiles/CMakeScratch/TryCompile-op6as6"
-      binary: "C:/Users/niayo/source/repos/Artisan/CMakeFiles/CMakeScratch/TryCompile-op6as6"
+      source: "C:/Users/niayo/source/repos/Artisan/build/x64-release/CMakeFiles/CMakeScratch/TryCompile-tsxl0f"
+      binary: "C:/Users/niayo/source/repos/Artisan/build/x64-release/CMakeFiles/CMakeScratch/TryCompile-tsxl0f"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/bin/clang-scan-deps.exe"
       CMAKE_C_FLAGS: "--target=amd64-pc-windows-msvc -fdiagnostics-absolute-paths  /DWIN32 /D_WINDOWS /W3"
@@ -100,11 +97,11 @@ events:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/niayo/source/repos/Artisan/CMakeFiles/CMakeScratch/TryCompile-op6as6'
+        Change Dir: 'C:/Users/niayo/source/repos/Artisan/build/x64-release/CMakeFiles/CMakeScratch/TryCompile-tsxl0f'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_cf66e
-        [1/2] C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\clang-cl.exe  /nologo   --target=amd64-pc-windows-msvc -fdiagnostics-absolute-paths  /DWIN32 /D_WINDOWS /W3  /MDd /Ob0 /Od /RTC1 -Zi /showIncludes /FoCMakeFiles\\cmTC_cf66e.dir\\CMakeCCompilerABI.c.obj /FdCMakeFiles\\cmTC_cf66e.dir\\ -c -- "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-3.31\\Modules\\CMakeCCompilerABI.c"
-        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --msvc-ver=1944 --intdir=CMakeFiles\\cmTC_cf66e.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100261~1.0\\x64\\rc.exe --mt=C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\llvm-mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\lld-link.exe /nologo CMakeFiles\\cmTC_cf66e.dir\\CMakeCCompilerABI.c.obj  /out:cmTC_cf66e.exe /implib:cmTC_cf66e.lib /pdb:cmTC_cf66e.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console   && cd ."
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_7ad71
+        [1/2] C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\clang-cl.exe  /nologo   --target=amd64-pc-windows-msvc -fdiagnostics-absolute-paths  /DWIN32 /D_WINDOWS /W3  /MDd /Ob0 /Od /RTC1 -Zi /showIncludes /FoCMakeFiles\\cmTC_7ad71.dir\\CMakeCCompilerABI.c.obj /FdCMakeFiles\\cmTC_7ad71.dir\\ -c -- "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-3.31\\Modules\\CMakeCCompilerABI.c"
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --msvc-ver=1944 --intdir=CMakeFiles\\cmTC_7ad71.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100261~1.0\\x64\\rc.exe --mt=C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\llvm-mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\lld-link.exe /nologo CMakeFiles\\cmTC_7ad71.dir\\CMakeCCompilerABI.c.obj  /out:cmTC_7ad71.exe /implib:cmTC_7ad71.lib /pdb:cmTC_7ad71.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console   && cd ."
         
       exitCode: 0
   -
@@ -165,8 +162,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "C:/Users/niayo/source/repos/Artisan/CMakeFiles/CMakeScratch/TryCompile-1mg3m7"
-      binary: "C:/Users/niayo/source/repos/Artisan/CMakeFiles/CMakeScratch/TryCompile-1mg3m7"
+      source: "C:/Users/niayo/source/repos/Artisan/build/x64-release/CMakeFiles/CMakeScratch/TryCompile-69uyz1"
+      binary: "C:/Users/niayo/source/repos/Artisan/build/x64-release/CMakeFiles/CMakeScratch/TryCompile-69uyz1"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/bin/clang-scan-deps.exe"
       CMAKE_CXX_FLAGS: "--target=amd64-pc-windows-msvc -fdiagnostics-absolute-paths  /DWIN32 /D_WINDOWS /W3 /GR /EHsc"
@@ -178,11 +175,11 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/niayo/source/repos/Artisan/CMakeFiles/CMakeScratch/TryCompile-1mg3m7'
+        Change Dir: 'C:/Users/niayo/source/repos/Artisan/build/x64-release/CMakeFiles/CMakeScratch/TryCompile-69uyz1'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_75f87
-        [1/2] C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\clang-cl.exe  /nologo -TP   --target=amd64-pc-windows-msvc -fdiagnostics-absolute-paths  /DWIN32 /D_WINDOWS /W3 /GR /EHsc  /MDd /Ob0 /Od /RTC1 -Zi /showIncludes /FoCMakeFiles\\cmTC_75f87.dir\\CMakeCXXCompilerABI.cpp.obj /FdCMakeFiles\\cmTC_75f87.dir\\ -c -- "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
-        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --msvc-ver=1944 --intdir=CMakeFiles\\cmTC_75f87.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100261~1.0\\x64\\rc.exe --mt=C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\llvm-mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\lld-link.exe /nologo CMakeFiles\\cmTC_75f87.dir\\CMakeCXXCompilerABI.cpp.obj  /out:cmTC_75f87.exe /implib:cmTC_75f87.lib /pdb:cmTC_75f87.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console   && cd ."
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_a0824
+        [1/2] C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\clang-cl.exe  /nologo -TP   --target=amd64-pc-windows-msvc -fdiagnostics-absolute-paths  /DWIN32 /D_WINDOWS /W3 /GR /EHsc  /MDd /Ob0 /Od /RTC1 -Zi /showIncludes /FoCMakeFiles\\cmTC_a0824.dir\\CMakeCXXCompilerABI.cpp.obj /FdCMakeFiles\\cmTC_a0824.dir\\ -c -- "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --msvc-ver=1944 --intdir=CMakeFiles\\cmTC_a0824.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100261~1.0\\x64\\rc.exe --mt=C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\llvm-mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\lld-link.exe /nologo CMakeFiles\\cmTC_a0824.dir\\CMakeCXXCompilerABI.cpp.obj  /out:cmTC_a0824.exe /implib:cmTC_a0824.lib /pdb:cmTC_a0824.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console   && cd ."
         
       exitCode: 0
   -
@@ -246,8 +243,8 @@ events:
     checks:
       - "Detecting CXX compile features"
     directories:
-      source: "C:/Users/niayo/source/repos/Artisan/CMakeFiles/CMakeScratch/TryCompile-7qlywl"
-      binary: "C:/Users/niayo/source/repos/Artisan/CMakeFiles/CMakeScratch/TryCompile-7qlywl"
+      source: "C:/Users/niayo/source/repos/Artisan/build/x64-release/CMakeFiles/CMakeScratch/TryCompile-ob1ztj"
+      binary: "C:/Users/niayo/source/repos/Artisan/build/x64-release/CMakeFiles/CMakeScratch/TryCompile-ob1ztj"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/bin/clang-scan-deps.exe"
       CMAKE_CXX_FLAGS: "--target=amd64-pc-windows-msvc -fdiagnostics-absolute-paths  /DWIN32 /D_WINDOWS /W3 /GR /EHsc"
@@ -258,11 +255,11 @@ events:
       variable: "CMAKE_CXX_FEATURE_TEST"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/niayo/source/repos/Artisan/CMakeFiles/CMakeScratch/TryCompile-7qlywl'
+        Change Dir: 'C:/Users/niayo/source/repos/Artisan/build/x64-release/CMakeFiles/CMakeScratch/TryCompile-ob1ztj'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_a8320
-        [1/2] C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\clang-cl.exe  /nologo -TP   --target=amd64-pc-windows-msvc -fdiagnostics-absolute-paths  /DWIN32 /D_WINDOWS /W3 /GR /EHsc  /MDd /Ob0 /Od /RTC1 -Zi   -std:c++14 /showIncludes /FoCMakeFiles\\cmTC_a8320.dir\\feature_tests.cxx.obj /FdCMakeFiles\\cmTC_a8320.dir\\ -c -- C:\\Users\\niayo\\source\\repos\\Artisan\\CMakeFiles\\CMakeScratch\\TryCompile-7qlywl\\feature_tests.cxx
-        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --msvc-ver=1944 --intdir=CMakeFiles\\cmTC_a8320.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100261~1.0\\x64\\rc.exe --mt=C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\llvm-mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\lld-link.exe /nologo CMakeFiles\\cmTC_a8320.dir\\feature_tests.cxx.obj  /out:cmTC_a8320.exe /implib:cmTC_a8320.lib /pdb:cmTC_a8320.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_6ddea
+        [1/2] C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\clang-cl.exe  /nologo -TP   --target=amd64-pc-windows-msvc -fdiagnostics-absolute-paths  /DWIN32 /D_WINDOWS /W3 /GR /EHsc  /MDd /Ob0 /Od /RTC1 -Zi   -std:c++14 /showIncludes /FoCMakeFiles\\cmTC_6ddea.dir\\feature_tests.cxx.obj /FdCMakeFiles\\cmTC_6ddea.dir\\ -c -- C:\\Users\\niayo\\source\\repos\\Artisan\\build\\x64-release\\CMakeFiles\\CMakeScratch\\TryCompile-ob1ztj\\feature_tests.cxx
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --msvc-ver=1944 --intdir=CMakeFiles\\cmTC_6ddea.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100261~1.0\\x64\\rc.exe --mt=C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\llvm-mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\lld-link.exe /nologo CMakeFiles\\cmTC_6ddea.dir\\feature_tests.cxx.obj  /out:cmTC_6ddea.exe /implib:cmTC_6ddea.lib /pdb:cmTC_6ddea.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
         
       exitCode: 0
   -
@@ -277,8 +274,8 @@ events:
     checks:
       - "Detecting CXX compile features"
     directories:
-      source: "C:/Users/niayo/source/repos/Artisan/CMakeFiles/CMakeScratch/TryCompile-3jndw6"
-      binary: "C:/Users/niayo/source/repos/Artisan/CMakeFiles/CMakeScratch/TryCompile-3jndw6"
+      source: "C:/Users/niayo/source/repos/Artisan/build/x64-release/CMakeFiles/CMakeScratch/TryCompile-hvz2x8"
+      binary: "C:/Users/niayo/source/repos/Artisan/build/x64-release/CMakeFiles/CMakeScratch/TryCompile-hvz2x8"
     cmakeVariables:
       CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/bin/clang-scan-deps.exe"
       CMAKE_CXX_FLAGS: "--target=amd64-pc-windows-msvc -fdiagnostics-absolute-paths  /DWIN32 /D_WINDOWS /W3 /GR /EHsc"
@@ -289,11 +286,11 @@ events:
       variable: "CMAKE_CXX_FEATURE_TEST"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/niayo/source/repos/Artisan/CMakeFiles/CMakeScratch/TryCompile-3jndw6'
+        Change Dir: 'C:/Users/niayo/source/repos/Artisan/build/x64-release/CMakeFiles/CMakeScratch/TryCompile-hvz2x8'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_d4abd
-        [1/2] C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\clang-cl.exe  /nologo -TP   --target=amd64-pc-windows-msvc -fdiagnostics-absolute-paths  /DWIN32 /D_WINDOWS /W3 /GR /EHsc  /MDd /Ob0 /Od /RTC1 -Zi /showIncludes /FoCMakeFiles\\cmTC_d4abd.dir\\feature_tests.cxx.obj /FdCMakeFiles\\cmTC_d4abd.dir\\ -c -- C:\\Users\\niayo\\source\\repos\\Artisan\\CMakeFiles\\CMakeScratch\\TryCompile-3jndw6\\feature_tests.cxx
-        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --msvc-ver=1944 --intdir=CMakeFiles\\cmTC_d4abd.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100261~1.0\\x64\\rc.exe --mt=C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\llvm-mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\lld-link.exe /nologo CMakeFiles\\cmTC_d4abd.dir\\feature_tests.cxx.obj  /out:cmTC_d4abd.exe /implib:cmTC_d4abd.lib /pdb:cmTC_d4abd.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_be547
+        [1/2] C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\clang-cl.exe  /nologo -TP   --target=amd64-pc-windows-msvc -fdiagnostics-absolute-paths  /DWIN32 /D_WINDOWS /W3 /GR /EHsc  /MDd /Ob0 /Od /RTC1 -Zi /showIncludes /FoCMakeFiles\\cmTC_be547.dir\\feature_tests.cxx.obj /FdCMakeFiles\\cmTC_be547.dir\\ -c -- C:\\Users\\niayo\\source\\repos\\Artisan\\build\\x64-release\\CMakeFiles\\CMakeScratch\\TryCompile-hvz2x8\\feature_tests.cxx
+        [2/2] C:\\WINDOWS\\system32\\cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --msvc-ver=1944 --intdir=CMakeFiles\\cmTC_be547.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100261~1.0\\x64\\rc.exe --mt=C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\llvm-mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~1\\2022\\COMMUN~1\\VC\\Tools\\Llvm\\bin\\lld-link.exe /nologo CMakeFiles\\cmTC_be547.dir\\feature_tests.cxx.obj  /out:cmTC_be547.exe /implib:cmTC_be547.lib /pdb:cmTC_be547.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
         
       exitCode: 0
 ...

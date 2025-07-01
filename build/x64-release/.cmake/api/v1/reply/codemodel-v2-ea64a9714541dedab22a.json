@@ -55,7 +55,7 @@
 				{
 					"directoryIndex" : 1,
 					"id" : "Artisan::@145eef247bfb46b6828c",
-					"jsonFile" : "target-Artisan-Release-c276fa7a3281838b182e.json",
+					"jsonFile" : "target-Artisan-Release-29d2ecd1b9e3c522ebfb.json",
 					"name" : "Artisan",
 					"projectIndex" : 0
 				}
@@ -65,7 +65,7 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "C:/Users/niayo/source/repos/Artisan",
+		"build" : "C:/Users/niayo/source/repos/Artisan/build/x64-release",
 		"source" : "C:/Users/niayo/source/repos/Artisan"
 	},
 	"version" : 

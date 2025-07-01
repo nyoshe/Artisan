@@ -1,0 +1,18 @@
+# ninja log v6
+23	920	7730488078261018	src/CMakeFiles/Artisan.dir/Move.cpp.obj	9103a8577fdc0b70
+29	2407	7730488078321292	src/CMakeFiles/Artisan.dir/MoveGen.cpp.obj	87506c321d876034
+4	16	7730498565598514	clean	8c45b54705a541e8
+17	3089	7730488078205980	src/CMakeFiles/Artisan.dir/Engine.cpp.obj	5da27324577d171b
+12	3162	7730488078150774	src/CMakeFiles/Artisan.dir/Board.cpp.obj	5c19b742f2d84477
+6	3364	7730488078087692	src/CMakeFiles/Artisan.dir/Artisan.cpp.obj	3e9fcd5cdffe4ed9
+36	2544	7730488078396423	src/CMakeFiles/Artisan.dir/UCI.cpp.obj	6e211422b70ef7df
+43	2614	7730488078461524	src/CMakeFiles/Artisan.dir/Tuner.cpp.obj	6eea3b2eb8cf738b
+4	13	7730501121805866	clean	8c45b54705a541e8
+28	722	7730501331000530	src/CMakeFiles/Artisan.dir/Move.cpp.obj	9103a8577fdc0b70
+33	1977	7730501331050937	src/CMakeFiles/Artisan.dir/MoveGen.cpp.obj	87506c321d876034
+43	2058	7730501331151069	src/CMakeFiles/Artisan.dir/Tuner.cpp.obj	6eea3b2eb8cf738b
+38	2075	7730501331095957	src/CMakeFiles/Artisan.dir/UCI.cpp.obj	6e211422b70ef7df
+23	2484	7730501330955449	src/CMakeFiles/Artisan.dir/Engine.cpp.obj	5da27324577d171b
+17	2682	7730501330898639	src/CMakeFiles/Artisan.dir/Board.cpp.obj	5c19b742f2d84477
+11	2726	7730501330833548	src/CMakeFiles/Artisan.dir/Artisan.cpp.obj	3e9fcd5cdffe4ed9
+2726	2838	7730501357980738	Artisan.exe	bc5ce3fca71248c6
