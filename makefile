@@ -44,7 +44,7 @@ build: configure
 # Copy the executable to the Makefile directory with the specified name
 copy_exe:
 	@echo "Copying executable to $(OUTPUT_BIN)..."
-	@cp $(BUILD_DIR)/$(PRESET)/src/Artisan$(EXE_EXT) $(OUTPUT_BIN)
+	@cp $(BUILD_DIR)/$(PRESET)/src/artisan$(EXE_EXT) $(OUTPUT_BIN)
 	@echo "Build complete: $(EXE)$(EXE_EXT)"
 
 # Clean build directory and executable
