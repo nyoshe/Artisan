@@ -998,6 +998,12 @@ void Board::updateZobrist(Move move) {
 
 int Board::getMobility(bool side)  {
 	int mobility = 0;
+	u64 w_pawn_defenders =
+		BB::get_pawn_attacks(eEast, eWhite, boards[eWhite][ePawn], 0xFFFFFFFFFFFFFFFF) |
+		BB::get_pawn_attacks(eWest, eWhite, boards[eWhite][ePawn], 0xFFFFFFFFFFFFFFFF);
+	u64 b_pawn_defenders =
+		BB::get_pawn_attacks(eEast, eBlack, boards[eBlack][ePawn], 0xFFFFFFFFFFFFFFFF) |
+		BB::get_pawn_attacks(eWest, eBlack, boards[eBlack][ePawn], 0xFFFFFFFFFFFFFFFF);
 	for (u8 p = 2; p <= eKing; p++) {
 		u64 attackers = boards[side][p];
 		u64 all_occ = boards[eBlack][0] | boards[eWhite][0];
@@ -1016,9 +1022,9 @@ int Board::getMobility(bool side)  {
 			}
 			//mobility += BB::popcnt(targets & ~our_occ);
 			//extra points for captures
-			eval_c.mobility[p - 2] += side == eWhite ? BB::popcnt(targets & ~all_occ) : -BB::popcnt(targets & ~boards[side][0]);
-			eval_c.captures[p - 2] += side == eWhite ? BB::popcnt(targets & boards[!side][0]) : -BB::popcnt(targets & boards[!side][0]);
-			mobility += BB::popcnt(targets & boards[!side][0]);
+			eval_c.mobility[p - 2] += side == eWhite ? BB::popcnt(targets & ~all_occ & ~b_pawn_defenders) : -BB::popcnt(targets & ~all_occ & ~w_pawn_defenders);
+			eval_c.captures[p - 2] += side == eWhite ? BB::popcnt(targets & boards[!side][0] & ~b_pawn_defenders) : -BB::popcnt(targets & boards[!side][0] & ~w_pawn_defenders);
+			mobility += BB::popcnt(targets & boards[!side][0] & (side == eWhite ? ~b_pawn_defenders : ~w_pawn_defenders));
 		}
 	}
 	return mobility;

@@ -284,7 +284,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 		
 
 		//search reductions
-		if (moves_searched > 2 + 2 * is_pv + ss->improving  && depth_left > 2 && !is_root) {
+		if (moves_searched > 1 + 2 * is_pv + ss->improving  && depth_left > 2 && !is_root) {
 			int R = 0;
 			
 			if (!is_quiet) {
@@ -298,7 +298,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 				//R += move_is_check && move.piece() == eKing;
 				//R += move_gen.stage == MoveStage::killer;
 				//R -= history_table[!b.us][move.from()][move.to()] / 10000;
-				R += tt_entry ? (tt_entry.best_move.captured() || tt_entry.best_move.promotion()) : 0;
+				//R += tt_entry ? (tt_entry.best_move.captured() || tt_entry.best_move.promotion()) : 0;
 				R += cut_node;
 				R += !ss->improving;
 			}
