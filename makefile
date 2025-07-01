@@ -29,7 +29,7 @@ OUTPUT_BIN = $(CURDIR)/$(EXE)$(EXE_EXT)
 # Targets
 .PHONY: all clean configure build install rebuild release debug help copy_exe
 
-all: build copy_exe
+all: clean build copy_exe
 
 # Configure project using CMake
 configure:

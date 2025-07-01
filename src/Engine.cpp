@@ -298,13 +298,12 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 				//R += move_is_check && move.piece() == eKing;
 				//R += move_gen.stage == MoveStage::killer;
 				//R -= history_table[!b.us][move.from()][move.to()] / 10000;
-				
+				R += tt_entry ? (tt_entry.best_move.captured() || tt_entry.best_move.promotion()) : 0;
 				R += cut_node;
 				R += !ss->improving;
 			}
 			R -= move_is_check;
 			R += !is_pv;
-			//R -= move_is_check;
 			//R -= history_table[!b.us][move.from()][move.to()] / 8870;
 
 			//R += tt_entry ? (tt_entry.best_move.captured() || tt_entry.best_move.promotion()) : 0;
@@ -630,14 +629,16 @@ void Engine::updatePV(int depth, Move move) {
 }
 
 void Engine::updateHistoryBonus(Move move, int depth_left) {
-	int bonus = std::min(280 * depth_left - 432, 2576);
+	//int bonus = std::min(280 * depth_left - 432, 2576);
+	int bonus = std::min(7 * depth_left * depth_left + 274 * depth_left - 182, 2048);
 	bonus = std::clamp(bonus, -16384, 16384);
 	history_table[b.us][move.from()][move.to()] +=
 		bonus - history_table[b.us][move.from()][move.to()] * abs(bonus) / 16384;
 }
 
 void Engine::updateHistoryMalus(Move move, int depth_left) {
-	int malus = -std::min(343 * depth_left - 161, 1239);
+	//int malus = -std::min(343 * depth_left - 161, 1239);
+	int malus = -std::min(5 * depth_left * depth_left + 283 * depth_left + 169, 1024);
 	malus = std::clamp(malus, -16384, 16384);
 	history_table[b.us][move.from()][move.to()] +=
 		malus - history_table[b.us][move.from()][move.to()] * abs(malus) / 16384;
