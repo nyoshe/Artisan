@@ -1,5 +1,0 @@
-C:/Users/niayo/source/repos/Artisan/CMakeFiles/edit_cache.dir
-C:/Users/niayo/source/repos/Artisan/CMakeFiles/rebuild_cache.dir
-C:/Users/niayo/source/repos/Artisan/src/CMakeFiles/Artisan.dir
-C:/Users/niayo/source/repos/Artisan/src/CMakeFiles/edit_cache.dir
-C:/Users/niayo/source/repos/Artisan/src/CMakeFiles/rebuild_cache.dir
