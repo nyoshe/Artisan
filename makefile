@@ -51,8 +51,8 @@ copy_exe:
 		echo "Build complete: $(EXE)$(EXE_EXT)"; \
 	else \
 		echo "ERROR: Could not find the Artisan executable!"; \
-		echo "output: $(OUTPUT_BIN)";
-		echo "dir: $(CURDIR)";
+		echo "output: $(OUTPUT_BIN)"; \
+		echo "dir: $(CURDIR)"; \
 		exit 1; \
 	fi
 
