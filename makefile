@@ -42,7 +42,7 @@ build: configure
 	@cd $(BUILD_DIR)/$(PRESET) && $(NINJA_PATH)
 
 # Copy the executable to the Makefile directory with the specified name
-copy_exe:
+copy_exe: build
 	@echo "Locating executable..."
 	@EXEC_PATH=$$(find $(BUILD_DIR)/$(PRESET) -name "Artisan$(EXE_EXT)" -type f | head -1); \
 	if [ -n "$$EXEC_PATH" ]; then \
