@@ -315,10 +315,11 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 				
 				int new_depth = depth_left - 1;
 				//history_table[!b.us][move.from()][move.to()];
-				//new_depth += score > best + 50;
-				//new_depth -= score < (best + depth_left);
-				//new_depth = std::min(new_depth, depth_left);
+				//new_depth += score > best + 50 + 10 * depth_left;
+				new_depth -= score < (best + 10 * depth_left);
+				new_depth = std::min(new_depth, depth_left);
 				//research full depth if we fail high
+				
 				
 				score = -alphaBeta(-alpha - 1, -alpha, new_depth,  !cut_node, ss + 1);
 			}
