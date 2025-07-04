@@ -160,7 +160,7 @@ public:
 			b.reset();
 			std::istringstream iss(position);
 			setBoardFEN(iss);
-			search(14);
+			search(12);
 			total_nodes += nodes;
 		}
 		int nps = total_nodes / (static_cast<float>(std::clock() - start_bench_time) / CLOCKS_PER_SEC);

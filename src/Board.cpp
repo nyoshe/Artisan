@@ -38,29 +38,6 @@ void Board::loadBoard(chess::Board new_board) {
 
 }
 
-bool Board::operator==(const Board& other) const {
-	for (int side = 0; side < 2; ++side) {
-		for (int piece = 0; piece < 7; ++piece) {
-			if (boards[side][piece] != other.boards[side][piece])
-				return false;
-		}
-	}
-	//kinda cursed for quick comparison
-	for (int i = 0; i < 8; ++i) {
-		if (reinterpret_cast<const u64*>(&mailbox)[i] != reinterpret_cast<const u64*>(&mailbox)[i])
-			return false;
-	}
-	if (ply != other.ply ||
-		us != other.us ||
-		castle_flags != other.castle_flags ||
-		ep_square != other.ep_square ||
-		hash != other.hash) {
-		return false;
-	}
-
-	return true;
-}
-
 void Board::setOccupancy() {
 	boards[eBlack][0] = 0;
 
@@ -636,12 +613,7 @@ void Board::genPseudoLegalCaptures(StaticVector<Move>& moves) {
 	u64 pawns = boards[us][ePawn];
 	int promo_rank = (us == eWhite) ? 6 : 1;
 
-	// Single pushes
-	u64 single_push = (us == eWhite) ? (pawns << 8) : (pawns >> 8);
-	single_push &= ~all_occ;
-
 	// Pawn captures
-
 	u64 left_captures = BB::get_pawn_attacks(eWest, Side(us), pawns, their_occ);
 	u64 right_captures = BB::get_pawn_attacks(eEast, Side(us), pawns, their_occ);
 

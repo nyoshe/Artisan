@@ -127,9 +127,6 @@ public:
     // Copy constructor
     Board(const Board& other) = default;
 
-    // Equality operator
-    bool operator==(const Board& other) const;
-
     void setOccupancy();
 
     //fancy print
