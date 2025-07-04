@@ -1,5 +1,0 @@
-/mnt/c/Users/niayo/source/repos/Artisan/build/x64-release-linux/CMakeFiles/edit_cache.dir
-/mnt/c/Users/niayo/source/repos/Artisan/build/x64-release-linux/CMakeFiles/rebuild_cache.dir
-/mnt/c/Users/niayo/source/repos/Artisan/build/x64-release-linux/src/CMakeFiles/Artisan.dir
-/mnt/c/Users/niayo/source/repos/Artisan/build/x64-release-linux/src/CMakeFiles/edit_cache.dir
-/mnt/c/Users/niayo/source/repos/Artisan/build/x64-release-linux/src/CMakeFiles/rebuild_cache.dir

@@ -1,9 +1,0 @@
-# ninja log v5
-36	511	1751345830567757100	src/CMakeFiles/Artisan.dir/Move.cpp.o	4c509b501d475e42
-32	1871	1751345831861841700	src/CMakeFiles/Artisan.dir/Board.cpp.o	e5aea73ba57a2528
-38	1409	1751345831397112000	src/CMakeFiles/Artisan.dir/MoveGen.cpp.o	8e3dc37f942cf06b
-42	1528	1751345831519257200	src/CMakeFiles/Artisan.dir/Tuner.cpp.o	367557451efaeffd
-40	1464	1751345831455818900	src/CMakeFiles/Artisan.dir/UCI.cpp.o	e0125bd78d2b8fde
-34	1844	1751345831835488400	src/CMakeFiles/Artisan.dir/Engine.cpp.o	475af7b4eaa3643c
-31	2042	1751345832027659700	src/CMakeFiles/Artisan.dir/Artisan.cpp.o	54e40763b18e3b29
-52	340	1751346970087366800	Artisan	40eda08bd6507084
