@@ -64,6 +64,10 @@ public:
                     options.hash_size = std::stoi(token);
                 }
             }
+            else if (token == "bench") {
+                Engine engine = Engine(UciOptions());
+                engine.bench();
+            }
             else if (token == "ucinewgame")
             {
                 engine_ = Engine(options);
