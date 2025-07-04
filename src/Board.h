@@ -33,7 +33,7 @@ static int32_t constexpr EG_SCORE(const int s) {
 
 inline u64 rnd64()
 {
-    static u64 i = 69;
+    static u64 i = 3262362381851395880ull;
     return (i = (164603309694725029ull * i) % 14738995463583502973ull);
 }
 
@@ -87,6 +87,17 @@ struct Zobrist {
     std::array<u64, 8> ep_file;
 };
 
+inline Zobrist initZobristValues() {
+    Zobrist z;
+
+    for (auto& val : z.piece_at) val = rnd64();
+    z.side = rnd64();
+    for (auto& val : z.castle_rights) val = rnd64();
+    for (auto& val : z.ep_file) val = rnd64();
+
+    return z;
+}
+
 class Board
 {
 private:
@@ -96,18 +107,9 @@ private:
     
     std::array < std::array<u64, 7>, 2 > boards;
 
-    static Zobrist initZobristValues() {
-        Zobrist z;
+    
 
-        for (auto& val : z.piece_at) val = rnd64();
-        z.side = rnd64();
-        for (auto& val : z.castle_rights) val = rnd64();
-        for (auto& val : z.ep_file) val = rnd64();
-
-        return z;
-    }
-
-    Zobrist z = initZobristValues();
+   static Zobrist z;
     std::array<u8, 64> mailbox;
     int eval = 0;
     u64 hash = 0;

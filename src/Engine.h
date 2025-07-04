@@ -56,13 +56,11 @@ struct SearchStack {
 	StaticVector<Move> moves;
 	StaticVector<Move> seen_quiets;
 	StaticVector<Move> seen_noisies;
-	std::array<Move, 2> killers;
+	std::array<Move, 2> killers = {Move(0, 0),Move(0, 0)};
 	void clear() {
 		moves.clear();
 		seen_quiets.clear();
 		seen_noisies.clear();
-		//killers[0] = Move();
-		//killers[1] = Move();
 		static_eval = 0;
 		improving_rate = 0;
 		improving = false;
@@ -88,8 +86,8 @@ class Engine {
 	int max_depth = 0;
 	int sel_depth = 0;
 	
-	Move root_best;
-	Move expected_response;
+	Move root_best = Move(0, 0);
+	Move expected_response = Move(0, 0);
 
 	// Timer variables
 	std::clock_t start_time = 0;
@@ -106,16 +104,18 @@ class Engine {
 public:
 	
 	std::array<std::array<std::array<int, 64>, 64>, 2> history_table;
-	std::array<std::array < std::array<std::array<int, 64>, 7>, 7>, 2> capture_history;
+	std::array<std::array<std::array<std::array<int, 64>, 7>, 7>, 2> capture_history;
 	int nodes = 0;
 	int hash_hits = 0;
 	int start_ply = 0;
-	Board b;
+	Board b = Board();
 	TimeControl tc;
 
 	Engine(UciOptions options) {
 		uci_options = options;
+		tt.clear();
 		tt.resize((uci_options.hash_size * 1024 * 1024) / sizeof(TTEntry));
+		b = Board();
 		reset();
 	}
 	void reset() {
@@ -141,6 +141,27 @@ public:
 				j = Move();
 			}
 		}
+
+		std::ranges::fill(pv_length.begin(), pv_length.end(), 0);
+
+		for (int i = 0; i < MAX_PLY; i++) {
+			search_stack[i].clear();
+			search_stack[i].killers[0] = Move(0, 0);
+			search_stack[i].killers[1] = Move(0, 0);
+		}
+		nodes = 0;
+		hash_hits = 0;
+		hash_count = 0;
+		hash_miss = 0;
+		do_bench = false;
+		max_depth = 0;
+		sel_depth = 0;
+		start_ply = 0;
+		time_over = false;
+		root_best = Move(0, 0);
+		expected_response = Move(0, 0);
+		perf_values.clear();
+		pos_count = 0;
 	}
 
 	std::vector<PerfT> doPerftSearch(int depth);
@@ -155,9 +176,9 @@ public:
 		auto start_bench_time = std::clock();
 		int total_nodes = 0;
 		do_bench = true;
-		for (auto& position : bench_fens) {
+		for (auto position : bench_fens) {
 			tc.movetime = INT32_MAX;
-			b.reset();
+			b = Board();
 			std::istringstream iss(position);
 			setBoardFEN(iss);
 			search(12);

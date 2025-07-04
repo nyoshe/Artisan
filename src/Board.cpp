@@ -1,7 +1,8 @@
 #include "Board.h"
-
+Zobrist Board::z = initZobristValues();
 
 Board::Board() {
+	state_stack.clear();
 	state_stack.reserve(512);
 	reset();
 }
@@ -35,7 +36,6 @@ void Board::loadBoard(chess::Board new_board) {
 	hash = calcHash();
 	eval = evalUpdate();
 	runSanityChecks();
-
 }
 
 void Board::setOccupancy() {
