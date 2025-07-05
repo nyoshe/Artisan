@@ -9,6 +9,8 @@
 #include "Misc.h"
 
 int constexpr good_cap_cutoff = -16000;
+static constexpr int MAX_PLY = 128;
+
 
 enum class TType : u8 {
 	INVALID,
@@ -32,7 +34,6 @@ struct TTEntry {
 	}
 };
 
-
 struct TimeControl {
 	int wtime = 0;
 	int btime = 0;
@@ -40,12 +41,12 @@ struct TimeControl {
 	int binc = 0;
 	int movetime = 0;
 };
+
 struct UciOptions {
 	u64 hash_size = 16;
 	bool debug = false;
 	bool uci = false;
 };
-
 
 struct SearchStack {
 	int static_eval = 0;
@@ -70,7 +71,7 @@ struct SearchStack {
 };
 
 class Engine {
-	static constexpr int MAX_PLY = 128;
+	
 	SearchStack search_stack[MAX_PLY];
 	UciOptions uci_options;
 
@@ -119,27 +120,20 @@ public:
 		reset();
 	}
 	void reset() {
-
 		for (auto& i : history_table) {
 			for (auto& j : i) {
-				for (auto& k : j) {
-					k = 0;
-				}
+				std::ranges::fill(j.begin(), j.end(), 0);
 			}
 		}
 		for (auto& i : capture_history) {
 			for (auto& j : i) {
 				for (auto& k : j) {
-					for (auto& l : k) {
-						l = 0;
-					}
+					std::ranges::fill(k.begin(), k.end(), 0);
 				}
 			}
 		}
 		for (auto& i : pv_table) {
-			for (auto& j : i) {
-				j = Move();
-			}
+			std::ranges::fill(i.begin(), i.end(), Move());
 		}
 
 		std::ranges::fill(pv_length.begin(), pv_length.end(), 0);

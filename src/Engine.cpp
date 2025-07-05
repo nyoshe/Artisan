@@ -1,6 +1,18 @@
 #include "Engine.h"
+namespace // Unnamed (anonymous) namespace
+{
+	auto calc_lmr_base() {
+		std::array<std::array<int, MAX_PLY>, 256> lmr_base;
+		for (int depth = 0; depth < MAX_PLY; depth++) {
+			for (int move = 0; move < 256; move++) {
+				lmr_base[depth][move] = 2.0 + std::log(depth) * std::log(move) / 2.5;
+			}
+		}
+		return lmr_base;
+	}
 
-
+	auto lmr_base = calc_lmr_base();
+}
 
 void Engine::perftSearch(int d) {
 	if (!d) return;
@@ -293,7 +305,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 				
 				//R += !is_pv;
 			} else {
-				R = static_cast<int>(2.0 + log_table[depth_left] * log_table[moves_searched] / 2.5);
+				R = lmr_base[depth_left][moves_searched];
 				
 				//R += move_is_check && move.piece() == eKing;
 				//R += move_gen.stage == MoveStage::killer;
