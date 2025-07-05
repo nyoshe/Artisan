@@ -99,8 +99,8 @@ class Engine {
 
 
 	void perftSearch(int depth);
-	int alphaBeta(int alpha, int beta, int depth_left, bool is_pv, SearchStack* ss);
-	int quiesce(int alpha, int beta, bool is_pv, SearchStack* ss);
+	[[nodiscard]] int alphaBeta(int alpha, int beta, int depth_left, bool cut_node, SearchStack* ss);
+	[[nodiscard]] int quiesce(int alpha, int beta, bool cut_node, SearchStack* ss);
 
 public:
 	
@@ -109,93 +109,37 @@ public:
 	int nodes = 0;
 	int hash_hits = 0;
 	int start_ply = 0;
+	bool time_over = false;
 	Board b = Board();
 	TimeControl tc;
 
-	Engine(UciOptions options) {
-		uci_options = options;
-		tt.clear();
-		tt.resize((uci_options.hash_size * 1024 * 1024) / sizeof(TTEntry));
-		b = Board();
-		reset();
-	}
-	void reset() {
-		for (auto& i : history_table) {
-			for (auto& j : i) {
-				std::ranges::fill(j.begin(), j.end(), 0);
-			}
-		}
-		for (auto& i : capture_history) {
-			for (auto& j : i) {
-				for (auto& k : j) {
-					std::ranges::fill(k.begin(), k.end(), 0);
-				}
-			}
-		}
-		for (auto& i : pv_table) {
-			std::ranges::fill(i.begin(), i.end(), Move());
-		}
+	Engine(UciOptions options);
 
-		std::ranges::fill(pv_length.begin(), pv_length.end(), 0);
+	void reset();
 
-		for (int i = 0; i < MAX_PLY; i++) {
-			search_stack[i].clear();
-			search_stack[i].killers[0] = Move(0, 0);
-			search_stack[i].killers[1] = Move(0, 0);
-		}
-		nodes = 0;
-		hash_hits = 0;
-		hash_count = 0;
-		hash_miss = 0;
-		do_bench = false;
-		max_depth = 0;
-		sel_depth = 0;
-		start_ply = 0;
-		time_over = false;
-		root_best = Move(0, 0);
-		expected_response = Move(0, 0);
-		perf_values.clear();
-		pos_count = 0;
-	}
-
-	std::vector<PerfT> doPerftSearch(int depth);
-	std::vector<PerfT> doPerftSearch(std::string position, int depth);
+	[[nodiscard]] std::vector<PerfT> doPerftSearch(int depth);
+	[[nodiscard]] std::vector<PerfT> doPerftSearch(std::string position, int depth);
 
 	void setBoardFEN(std::istringstream& fen);
 	void setBoardUCI(std::istringstream& uci);
 
 	void initSearch();
-	Move search(int depth);
-	void bench() {
-		auto start_bench_time = std::clock();
-		int total_nodes = 0;
-		do_bench = true;
-		for (auto position : bench_fens) {
-			tc.movetime = INT32_MAX;
-			b = Board();
-			std::istringstream iss(position);
-			setBoardFEN(iss);
-			search(12);
-			total_nodes += nodes;
-		}
-		int nps = total_nodes / (static_cast<float>(std::clock() - start_bench_time) / CLOCKS_PER_SEC);
+	void bench();
 
-		std::cout << total_nodes << " nodes " << nps << " nps" << std::endl;
-	}
-	std::vector<Move> getPrincipalVariation() const;
+	[[nodiscard]] Move search(int depth);
+	[[nodiscard]] std::vector<Move> getPrincipalVariation() const;
 
-	void printPV(int score);
-
+	
+	[[nodiscard]] TTEntry probeTT(u64 hash_key) const;
 	void storeTTEntry(u64 hash_key, int score, TType type, u8 depth_left, Move best);
-	TTEntry probeTT(u64 hash_key) const;
 
-	bool time_over = false;
-	bool checkTime(bool strict);
+	
+	[[nodiscard]] bool checkTime(bool strict);
 	void calcTime();
-
+	void printPV(int score);
 	void updatePV(int depth, Move move);
-	void updateHistoryBonus(Move move, int depth_left);
-	void updateHistoryMalus(Move move, int depth_left);
+	void updateQuietHistory(SearchStack* ss, int depth_left);
+	void updateNoisyHistory(SearchStack* ss, int depth_left);
 };
 
 enum class MoveStage {
@@ -207,7 +151,7 @@ enum class MoveStage {
 	history
 };
 
-class MoveGen {
+class MovePick {
 	int killer_slot = 0;
 
 public:

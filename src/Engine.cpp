@@ -1,5 +1,5 @@
 #include "Engine.h"
-namespace // Unnamed (anonymous) namespace
+namespace
 {
 	auto calc_lmr_base() {
 		std::array<std::array<int, MAX_PLY>, 256> lmr_base;
@@ -159,6 +159,23 @@ Move Engine::search(int depth) {
 	return best_move;
 }
 
+void Engine::bench() {
+	auto start_bench_time = std::clock();
+	int total_nodes = 0;
+	do_bench = true;
+	for (auto position : bench_fens) {
+		tc.movetime = INT32_MAX;
+		b = Board();
+		std::istringstream iss(position);
+		setBoardFEN(iss);
+		search(12);
+		total_nodes += nodes;
+	}
+	int nps = total_nodes / (static_cast<float>(std::clock() - start_bench_time) / CLOCKS_PER_SEC);
+
+	std::cout << total_nodes << " nodes " << nps << " nps" << std::endl;
+}
+
 
 int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, SearchStack* ss) {
 	ss->clear();
@@ -254,7 +271,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 	}
 
 	int moves_searched = 0;
-	MoveGen move_gen;
+	MovePick move_gen;
 	bool raised_alpha = false;
 	while (const Move move = move_gen.getNext(*this, b, ss)) {
 		if (checkTime(false)) return best;
@@ -367,25 +384,10 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 					ss->killers[1] = ss->killers[0];
 					ss->killers[0] = move;
 				}
-				updateHistoryBonus(move, depth_left);
-				for (auto& quiet : ss->seen_quiets) {
-					updateHistoryMalus(quiet, depth_left);
-				}
+				updateQuietHistory(ss, depth_left);
+			}
+			updateNoisyHistory(ss, depth_left);
 
-			} else {
-				int bonus = std::min(7 * depth_left * depth_left + 274 * depth_left - 182, 2048);
-				//int bonus = std::min(280 * depth_left - 432, 2576);
-				bonus = std::clamp(bonus, -16384, 16384);
-				capture_history[b.us][move.piece()][move.captured()][move.to()] +=
-					bonus - capture_history[b.us][move.piece()][move.captured()][move.to()] * abs(bonus) / 16384;
-			}
-			int malus = -std::min(5 * depth_left * depth_left + 283 * depth_left + 169, 1024);
-			//int malus = -std::min(343 * depth_left - 161, 1239);
-			for (auto& capture : ss->seen_noisies) {
-				malus = std::clamp(malus, -16384, 16384);
-				capture_history[b.us][capture.piece()][capture.captured()][capture.to()] +=
-					malus - capture_history[b.us][capture.piece()][capture.captured()][capture.to()] * abs(malus) / 16384;
-			}
 			storeTTEntry(b.getHash(), best, TType::BETA_CUT, depth_left, best_move);
 			return best;
 		}
@@ -401,7 +403,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 	return best;
 }
 
-int Engine::quiesce(int alpha, int beta, bool is_pv, SearchStack* ss) {
+int Engine::quiesce(int alpha, int beta, bool cut_node, SearchStack* ss) {
 	ss->clear();
 	nodes++;
 	int search_ply = b.ply - start_ply;
@@ -426,7 +428,7 @@ int Engine::quiesce(int alpha, int beta, bool is_pv, SearchStack* ss) {
 	TTEntry entry = probeTT(hash_key);
 
 	//always accept TB hits in quiescence
-	if (!is_pv && entry) {
+	if (!cut_node && entry) {
 		if (entry.type == TType::EXACT) return entry.eval;
 		if (entry.type == TType::BETA_CUT && entry.eval >= beta) return entry.eval;
 		if (entry.type == TType::FAIL_LOW && entry.eval <= alpha) return entry.eval;
@@ -451,14 +453,14 @@ int Engine::quiesce(int alpha, int beta, bool is_pv, SearchStack* ss) {
 
 	bool raised_alpha = false;
 	Move best_move;
-	MoveGen move_gen;
+	MovePick move_gen;
 	Move move = move_gen.getNext(*this, b, ss);
 	while (move.raw()) {
 		if (move.captured() == eKing) return 99999 - (b.ply - start_ply);
 		if (checkTime(false)) return best;
 
 		b.doMove(move);
-		int score = -quiesce(-beta, -alpha, is_pv, ss + 1);
+		int score = -quiesce(-beta, -alpha, cut_node, ss + 1);
 		b.undoMove();
 
 		if (score > best) {
@@ -640,20 +642,91 @@ void Engine::updatePV(int depth, Move move) {
 	pv_length[depth] = pv_length[depth + 1] + 1;
 }
 
-void Engine::updateHistoryBonus(Move move, int depth_left) {
+void Engine::updateQuietHistory(SearchStack* ss, int depth_left) {
+	Move move = ss->current_move;
 	//int bonus = std::min(280 * depth_left - 432, 2576);
+	//int malus = -std::min(343 * depth_left - 161, 1239);
 	int bonus = std::min(7 * depth_left * depth_left + 274 * depth_left - 182, 2048);
+	int malus = -std::min(5 * depth_left * depth_left + 283 * depth_left + 169, 1024);
+
 	bonus = std::clamp(bonus, -16384, 16384);
 	history_table[b.us][move.from()][move.to()] +=
 		bonus - history_table[b.us][move.from()][move.to()] * abs(bonus) / 16384;
+
+	for (auto& quiet : ss->seen_quiets) {
+		malus = std::clamp(malus, -16384, 16384);
+		history_table[b.us][quiet.from()][quiet.to()] +=
+			malus - history_table[b.us][quiet.from()][quiet.to()] * abs(malus) / 16384;
+	}
 }
 
-void Engine::updateHistoryMalus(Move move, int depth_left) {
+void Engine::updateNoisyHistory(SearchStack* ss, int depth_left) {
+	Move move = ss->current_move;
+	bool is_quiet = !(move.captured() || move.promotion());
+	//int bonus = std::min(280 * depth_left - 432, 2576);
 	//int malus = -std::min(343 * depth_left - 161, 1239);
+	int bonus = std::min(7 * depth_left * depth_left + 274 * depth_left - 182, 2048);
 	int malus = -std::min(5 * depth_left * depth_left + 283 * depth_left + 169, 1024);
-	malus = std::clamp(malus, -16384, 16384);
-	history_table[b.us][move.from()][move.to()] +=
-		malus - history_table[b.us][move.from()][move.to()] * abs(malus) / 16384;
+
+	if (!is_quiet) {
+		bonus = std::clamp(bonus, -16384, 16384);
+		capture_history[b.us][move.piece()][move.captured()][move.to()] +=
+			bonus - capture_history[b.us][move.piece()][move.captured()][move.to()] * abs(bonus) / 16384;
+	}
+
+	for (auto& capture : ss->seen_noisies) {
+		malus = std::clamp(malus, -16384, 16384);
+		capture_history[b.us][capture.piece()][capture.captured()][capture.to()] +=
+			malus - capture_history[b.us][capture.piece()][capture.captured()][capture.to()] * abs(malus) / 16384;
+	}
+}
+
+
+Engine::Engine(UciOptions options) {
+	uci_options = options;
+	tt.clear();
+	tt.resize((uci_options.hash_size * 1024 * 1024) / sizeof(TTEntry));
+	b = Board();
+	reset();
+}
+
+void Engine::reset() {
+	for (auto& i : history_table) {
+		for (auto& j : i) {
+			std::ranges::fill(j.begin(), j.end(), 0);
+		}
+	}
+	for (auto& i : capture_history) {
+		for (auto& j : i) {
+			for (auto& k : j) {
+				std::ranges::fill(k.begin(), k.end(), 0);
+			}
+		}
+	}
+	for (auto& i : pv_table) {
+		std::ranges::fill(i.begin(), i.end(), Move());
+	}
+
+	std::ranges::fill(pv_length.begin(), pv_length.end(), 0);
+
+	for (int i = 0; i < MAX_PLY; i++) {
+		search_stack[i].clear();
+		search_stack[i].killers[0] = Move(0, 0);
+		search_stack[i].killers[1] = Move(0, 0);
+	}
+	nodes = 0;
+	hash_hits = 0;
+	hash_count = 0;
+	hash_miss = 0;
+	do_bench = false;
+	max_depth = 0;
+	sel_depth = 0;
+	start_ply = 0;
+	time_over = false;
+	root_best = Move(0, 0);
+	expected_response = Move(0, 0);
+	perf_values.clear();
+	pos_count = 0;
 }
 
 std::vector<PerfT> Engine::doPerftSearch(int depth) {

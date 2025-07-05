@@ -9,7 +9,7 @@ add_executable (Artisan "Artisan.cpp" "Artisan.h"
     "Memory.h"
     "Engine.h" "Engine.cpp"
     "Move.h" "Move.cpp"
-    "MoveGen.h" "MoveGen.cpp"
+     
     "include/chess.hpp"
     "Parser.h"
     "UCI.h" "UCI.cpp"
