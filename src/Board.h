@@ -143,11 +143,9 @@ public:
     void removePiece(u8 square);
 
     [[nodiscard]] Side getSide(int square) const;
-    void loadFen(std::istringstream& fen_stream);
     void loadBoard(chess::Board new_board);
     // Returns a Move object corresponding to the given UCI string (e.g. "e2e4", "e7e8q").
     [[nodiscard]] Move moveFromUCI(const std::string& uci);
-    void loadUci(std::istringstream& uci);
     void genPseudoLegalCaptures(StaticVector<Move>& moves);
     void serializeMoves(Piece piece, StaticVector<Move>& moves, bool quiet);
 

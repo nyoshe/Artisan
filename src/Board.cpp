@@ -9,13 +9,21 @@ Board::Board() {
 
 
 void Board::loadBoard(chess::Board new_board) {
-	eval = 0;
-	ply = 0;
-	hash = 0;
-	half_move = 0;
+	reset();
+	start_fen = new_board.getFen();
+	ply = new_board.fullMoveNumber();
+	half_move = new_board.halfMoveClock();
 	us = new_board.sideToMove();
-	castle_flags = 0b1111;
-	ep_square = -1;
+	chess::Board::CastlingRights castle_rights = new_board.castlingRights();
+	castle_flags = 0;
+	bool cr = castle_rights.has(chess::Color::WHITE, chess::Board::CastlingRights::Side::KING_SIDE);
+	castle_flags |= castle_rights.has(chess::Color::WHITE, chess::Board::CastlingRights::Side::KING_SIDE) ? wShortCastleFlag : 0;
+	castle_flags |= castle_rights.has(chess::Color::WHITE, chess::Board::CastlingRights::Side::QUEEN_SIDE) ? wLongCastleFlag : 0;
+	castle_flags |= castle_rights.has(chess::Color::BLACK, chess::Board::CastlingRights::Side::KING_SIDE) ? bShortCastleFlag : 0;
+	castle_flags |= castle_rights.has(chess::Color::BLACK, chess::Board::CastlingRights::Side::QUEEN_SIDE) ? bLongCastleFlag : 0;
+
+	ep_square = new_board.enpassantSq().index();
+	if (ep_square == 64) ep_square = -1;
 	state_stack.clear();
 
 	for (int i = 0; i < 64; i++) {
@@ -394,89 +402,6 @@ Side Board::getSide(int square) const {
 		: (boards[eBlack][0] & BB::set_bit[square] ? eBlack : eSideNone);
 }
 
-void Board::loadFen(std::istringstream& fen_stream) {
-	
-	reset();
-	// Clear all bitboards and piece_board
-	for (int side = 0; side < 2; ++side)
-		for (int piece = 0; piece < 7; ++piece)
-			boards[side][piece] = 0;
-	for (int i = 0; i < 64; ++i)
-		mailbox[i] = eNone;
-
-	std::string board_part, active_color, castling, ep, halfmove, fullmove;
-	fen_stream >> board_part >> active_color >> castling >> ep >> halfmove >> fullmove;
-	start_fen = std::string(board_part + " " + active_color + " " + castling + " " + ep + " " + halfmove + " " + fullmove);
-	// Parse board
-	int square = 56; // a8
-	for (char c : board_part) {
-		if (c == '/') {
-			square -= 16; // move to next rank
-		}
-		else if (isdigit(c)) {
-			square += c - '0';
-		}
-		else {
-			int color = isupper(c) ? eWhite : eBlack;
-			int piece = eNone;
-			switch (tolower(c)) {
-			case 'p': piece = ePawn; break;
-			case 'n': piece = eKnight; break;
-			case 'b': piece = eBishop; break;
-			case 'r': piece = eRook; break;
-			case 'q': piece = eQueen; break;
-			case 'k': piece = eKing; break;
-			}
-			if (piece != eNone) {
-				boards[color][piece] |= BB::set_bit[square];
-				boards[color][0] |= BB::set_bit[square];
-				mailbox[square] = piece;
-			}
-			++square;
-		}
-	}
-
-	// Parse active color
-	us = (active_color == "w") ? eWhite : eBlack;
-
-	castle_flags = 0;
-	// Parse castling rights
-	for (char c : castling) {
-		switch (c) {
-		case 'K': castle_flags |= wShortCastleFlag; break;
-		case 'Q': castle_flags |= wLongCastleFlag; break;
-		case 'k': castle_flags |= bShortCastleFlag; break;
-		case 'q': castle_flags |= bLongCastleFlag; break;
-		case '-': break;
-		}
-	}
-
-	// Parse en passant square
-	if (ep != "-" && ep.length() == 2) {
-		int file = ep[0] - 'a';
-		int rank = ep[1] - '1';
-		ep_square = file + (rank << 3);
-	}
-	else {
-		ep_square = -1;
-	}
-
-	if (fullmove[0] != 'c') {
-		if (!fullmove.empty())
-			ply = std::stoi(fullmove);
-
-		if (!halfmove.empty())
-			half_move = std::stoi(halfmove);
-	}
-	
-
-	// Recompute occupancy
-	setOccupancy();
-	hash = calcHash();
-	eval = evalUpdate();
-	runSanityChecks();
-}
-
 Move Board::moveFromUCI(const std::string& uci) {
 	StaticVector<Move> moves;
 	genPseudoLegalMoves(moves);
@@ -492,44 +417,6 @@ Move Board::moveFromUCI(const std::string& uci) {
 #endif
 	return Move(0, 0);
 }
-
-void Board::loadUci(std::istringstream& iss) {
-	std::string token;
-	std::vector<std::string> tokens;
-	while (iss >> token) {
-		tokens.push_back(token);
-	}
-	if (tokens.empty()) return;
-
-	size_t idx = 0;
-	if (idx >= tokens.size()) return;
-
-	// Handle "moves" and apply each move
-	if (idx < tokens.size() && tokens[idx] == "moves") {
-		++idx;
-		for (; idx < tokens.size(); ++idx) {
-			Move move = moveFromUCI(tokens[idx]);
-			if (move.raw() != 0) {
-				doMove(move);
-#ifdef DEBUG
-				if (calcHash() != hash) {
-					throw std::logic_error("hashing error");
-				}
-#endif
-			}
-			else {
-				// Invalid move, stop processing further
-				break;
-			}
-		}
-	}
-	setOccupancy();
-	hash = calcHash();
-	eval = evalUpdate();
-	runSanityChecks();
-}
-
-
 
 void Board::genPseudoLegalMoves(StaticVector<Move>& moves) {
 	const int them = us ^ 1;

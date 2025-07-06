@@ -2,7 +2,7 @@
 namespace
 {
 	auto calc_lmr_base() {
-		std::array<std::array<int, MAX_PLY>, 256> lmr_base;
+		std::array<std::array<int, 256>, MAX_PLY> lmr_base;
 		for (int depth = 0; depth < MAX_PLY; depth++) {
 			for (int move = 0; move < 256; move++) {
 				lmr_base[depth][move] = 2.0 + std::log(depth) * std::log(move) / 2.5;
@@ -129,16 +129,16 @@ Move Engine::search(int depth) {
 			//allocate extra time if we just had a best move change
 			
 			if (best_move != pv_table[0][0] && !add_time) {
-				float total_time = b.us ? tc.btime : tc.wtime;
-				float inc = b.us ? tc.binc : tc.winc;
-				if (max_time * 3.0 < total_time - inc - 10) {
-					max_time = max_time * 3.0;
+				int total_time = b.us ? tc.btime : tc.wtime;
+				int inc = b.us ? tc.binc : tc.winc;
+				if (max_time * 3 < total_time - inc - 10) {
+					max_time = max_time * 3;
 					add_time = true;
 					continue;
 				}
 			} 
 			return best_move;
-		} else if ((std::clock() - start_time) > max_time / 2.0 && max_time != -1) {
+		} else if ((std::clock() - start_time) > max_time / 2 && max_time != -1) {
 			if (pv_table[0][0]) {
 				best_move = pv_table[0][0];
 				expected_response = pv_table[0][1];
@@ -171,7 +171,7 @@ void Engine::bench() {
 		search(12);
 		total_nodes += nodes;
 	}
-	int nps = total_nodes / (static_cast<float>(std::clock() - start_bench_time) / CLOCKS_PER_SEC);
+	int nps = static_cast<float>(total_nodes) / (static_cast<float>(std::clock() - start_bench_time) / CLOCKS_PER_SEC);
 
 	std::cout << total_nodes << " nodes " << nps << " nps" << std::endl;
 }
@@ -319,11 +319,8 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 			if (!is_quiet) {
 				//R = static_cast<int>(0.5 + log_table[depth_left] * log_table[moves_searched] / 3.5);
 				R = 3 - capture_history[b.us][move.piece()][move.captured()][move.to()] / 5000;
-				
-				//R += !is_pv;
 			} else {
 				R = lmr_base[depth_left][moves_searched];
-				
 				//R += move_is_check && move.piece() == eKing;
 				//R += move_gen.stage == MoveStage::killer;
 				//R -= history_table[!b.us][move.from()][move.to()] / 10000;
@@ -334,9 +331,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 			R -= move_is_check;
 			R += !is_pv;
 			//R -= history_table[!b.us][move.from()][move.to()] / 8870;
-
 			//R += tt_entry ? (tt_entry.best_move.captured() || tt_entry.best_move.promotion()) : 0;
-
 
 			int lmr_depth = std::clamp(depth_left - R, 1, depth_left);
 			score = -alphaBeta(-alpha - 1, -alpha, lmr_depth, true, ss + 1);
@@ -741,15 +736,45 @@ std::vector<PerfT> Engine::doPerftSearch(int depth) {
 }
 
 void Engine::setBoardFEN(std::istringstream& fen) {
-	b.loadFen(fen);
+	std::string board_part, active_color, castling, ep, halfmove, fullmove;
+	fen >> board_part >> active_color >> castling >> ep >> halfmove >> fullmove;
+	std::string fen_string = std::string(board_part + " " + active_color + " " + castling + " " + ep + " " + halfmove + " " + fullmove);
+	b.loadBoard(chess::Board::fromFen(fen_string));
 }
 
 void Engine::setBoardUCI(std::istringstream& uci) {
-	b.loadUci(uci);
+	std::string token;
+	std::vector<std::string> tokens;
+	while (uci >> token) {
+		tokens.push_back(token);
+	}
+	if (tokens.empty()) return;
+
+	size_t idx = 0;
+	if (idx >= tokens.size()) return;
+
+	// Handle "moves" and apply each move
+	if (idx < tokens.size() && tokens[idx] == "moves") {
+		++idx;
+		for (; idx < tokens.size(); ++idx) {
+			Move move = b.moveFromUCI(tokens[idx]);
+			if (move.raw() != 0) {
+				b.doMove(move);
+#ifdef DEBUG
+				if (calcHash() != hash) {
+					throw std::logic_error("hashing error");
+				}
+#endif
+			}
+			else {
+				// Invalid move, stop processing further
+				break;
+			}
+		}
+	}
 }
 
 std::vector<PerfT> Engine::doPerftSearch(std::string position, int depth) {
-	std::istringstream iss(position);
-	b.loadFen(iss);
+	b.loadBoard(chess::Board::fromFen(position));
 	return doPerftSearch(depth);
 }

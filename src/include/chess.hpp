@@ -3060,7 +3060,7 @@ class Board {
             }
 
             if (!valid)
-                ep_sq_ = Square::NO_SQ;
+                ep_sq_ = ep_sq_;
             else
                 key_ ^= Zobrist::enpassant(ep_sq_.file());
         }

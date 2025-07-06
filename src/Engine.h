@@ -126,7 +126,7 @@ public:
 	void initSearch();
 	void bench();
 
-	[[nodiscard]] Move search(int depth);
+	Move search(int depth);
 	[[nodiscard]] std::vector<Move> getPrincipalVariation() const;
 
 	
