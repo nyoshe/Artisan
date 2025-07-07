@@ -277,7 +277,6 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 		if (checkTime(false)) return best;
 		moves_searched++;
 		int score = 0;
-		int hist = history_table[b.us][move.from()][move.to()];
 
 		bool is_quiet = !(move.captured() || move.promotion());
 		if (is_quiet) {
@@ -285,6 +284,8 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 		} else {
 			ss->seen_noisies.emplace_back(move);
 		}
+		int hist = is_quiet ? history_table[b.us][move.from()][move.to()] : capture_history[b.us][move.piece()][move.captured()][move.to()];
+
 		int see_margin[2];
 		see_margin[0] = -20 * depth_left * depth_left;
 		see_margin[1] = -64 * depth_left;
@@ -331,12 +332,12 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 			
 			if (!is_quiet) {
 				//R = static_cast<int>(0.5 + log_table[depth_left] * log_table[moves_searched] / 3.5);
-				R = 3 - capture_history[b.us][move.piece()][move.captured()][move.to()] / 5000;
+				R = 3 - hist / 5000;
 			} else {
 				R = lmr_base[depth_left][moves_searched];
 				//R += move_is_check && move.piece() == eKing;
 				//R += move_gen.stage == MoveStage::killer;
-				//R -= history_table[!b.us][move.from()][move.to()] / 10000;
+				//R -= hist / 10000;
 				//R += tt_entry ? (tt_entry.best_move.captured() || tt_entry.best_move.promotion()) : 0;
 				R += cut_node;
 				R += !ss->improving;
