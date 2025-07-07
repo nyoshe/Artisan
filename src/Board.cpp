@@ -624,11 +624,11 @@ u64 Board::getAttackers(int square) const {
 }
 
 u64 Board::getAttackers(int square, bool side) const {
+	return getAttackers(square, us, getOccupancy());
+}
+u64 Board::getAttackers(int square, bool side, u64 occ) const {
 	u64 attackers = 0;
 	u64 square_mask = BB::set_bit[square];
-	u64 our_occ = boards[side][0];
-	u64 their_occ = boards[!side][0];
-	u64 all_occ = our_occ | their_occ;
 
 	u64 west_defenders = BB::get_pawn_attacks(eWest, static_cast<Side>(side), square_mask, boards[!side][ePawn]);
 	u64 east_defenders = BB::get_pawn_attacks(eEast, static_cast<Side>(side), square_mask, boards[!side][ePawn]);
@@ -638,14 +638,15 @@ u64 Board::getAttackers(int square, bool side) const {
 	// Check knights  
 	attackers |= BB::knight_attacks[square] & boards[!side][eKnight];
 	//check bishops
-	attackers |= BB::get_bishop_attacks(square, all_occ) & ~our_occ & (boards[!side][eBishop] | boards[!side][eQueen]);
+	attackers |= BB::get_bishop_attacks(square, occ) & (boards[!side][eBishop] | boards[!side][eQueen]);
 	// Check rooks
-	attackers |= BB::get_rook_attacks(square, all_occ) & ~our_occ & (boards[!side][eRook] | boards[!side][eQueen]);
+	attackers |= BB::get_rook_attacks(square, occ) & (boards[!side][eRook] | boards[!side][eQueen]);
 
 	// Check king  
 	attackers |= BB::king_attacks[square] & boards[!side][eKing];
 	return attackers;
 }
+
 
 bool Board::isCheck() const {
 	return getAttackers(BB::bitscan(boards[us][eKing]), us);
@@ -1051,8 +1052,8 @@ int Board::staticExchangeEvaluation(Move move, int threshold) {
 	if (balance >= 0) return 1;
 
 	// Grab sliders for updating revealed attackers
-	bishops = boards[us][eBishop] | boards[us][eQueen];
-	rooks = boards[us][eRook] | boards[us][eBishop];
+	bishops = boards[us][eBishop] | boards[!us][eBishop] | boards[us][eQueen] | boards[!us][eQueen];
+	rooks = boards[us][eRook] | boards[!us][eRook] | boards[us][eQueen] | boards[!us][eQueen];
 
 	// Let occupied suppose that the move was actually made
 	occupied = getOccupancy();
@@ -1061,8 +1062,10 @@ int Board::staticExchangeEvaluation(Move move, int threshold) {
 
 	// Get all pieces which attack the target square. And with occupied
 	// so that we do not let the same piece attack twice
-	attackers = getAttackers(to, occupied);
-
+	//printBoard();
+	attackers = (getAttackers(to, eBlack, occupied) | getAttackers(to, eWhite, occupied)) & occupied;
+	//std::cout << BB::to_string(BB::set_bit[to]) << std::endl;
+	//std::cout << BB::to_string(attackers) << std::endl;
 	// Now our opponents turn to recapture
 	colour = !us;
 
@@ -1074,11 +1077,11 @@ int Board::staticExchangeEvaluation(Move move, int threshold) {
 
 		// Find our weakest piece to attack with
 		for (nextVictim = ePawn; nextVictim <= eQueen; nextVictim++)
-			if (myAttackers & boards[us][nextVictim])
+			if (myAttackers & (boards[us][nextVictim] | boards[!us][nextVictim]))
 				break;
 
 		// Remove this attacker from the occupied
-		occupied ^= (1ull << BB::bitscan(myAttackers & boards[us][nextVictim]));
+		occupied ^= (1ull << BB::bitscan(myAttackers & (boards[us][nextVictim] | boards[!us][nextVictim])));
 
 		// A diagonal move may reveal bishop or queen attackers
 		if (nextVictim == ePawn || nextVictim == eBishop || nextVictim == eQueen)
@@ -1090,7 +1093,7 @@ int Board::staticExchangeEvaluation(Move move, int threshold) {
 
 		// Make sure we did not add any already used attacks
 		attackers &= occupied;
-
+		
 		// Swap the turn
 		colour = !colour;
 
@@ -1128,7 +1131,6 @@ int Board::moveEstimatedValue(Move move) {
 	else if (move.isEnPassant())
 		value = see_piece_vals[ePawn];
 
-	// We encode Castle moves as KxR, so the initial step is wrong
 	else if (move.isCastle())
 		value = 0;
 
