@@ -293,7 +293,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 		if (best > -30000
 			&& depth_left <= 10
 			&& move_gen.stage > MoveStage::good_captures
-			&& !b.staticExchangeEvaluation(move, see_margin[is_quiet])){
+			&& !b.staticExchangeEvaluation(move, see_margin[is_quiet] - hist / 512)){
 
 			continue;
 		}
