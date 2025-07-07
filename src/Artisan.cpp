@@ -9,7 +9,7 @@ using namespace std;
 int main(int argc, char* argv[])
 {
 	BB::init();
-	Tuner tuner("quiet-labeled.epd");
+	//Tuner tuner("quiet-labeled.epd");
 	if (argc > 1 && std::string(argv[1]) == "bench") {
 		Engine engine = Engine(UciOptions());
 		engine.bench();

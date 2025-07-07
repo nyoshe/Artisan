@@ -151,6 +151,7 @@ public:
     void filterToLegal(StaticVector<Move>& pseudo_moves);
     [[nodiscard]] bool isLegal(Move move);
     [[nodiscard]] int staticExchangeEvaluation(Move move, int threshold);
+    [[nodiscard]] int Board::moveEstimatedValue(Move move);
 
     //get index of all attackers of a square
     [[nodiscard]] u64 getAttackers(int square) const;

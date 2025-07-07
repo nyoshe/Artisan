@@ -557,6 +557,7 @@ void Board::serializeMoves(Piece piece, StaticVector<Move>& moves, bool quiet) {
 		BB::bitscan_reset(from, attackers);
 		u64 targets = 0;
 		switch (piece) {
+		case ePawn: break;
 		case eKnight: targets = BB::knight_attacks[from] & ~our_occ & mask; break;
 		case eBishop: targets = BB::get_bishop_attacks(from, all_occ) & ~our_occ & mask; break;
 		case eRook: targets = BB::get_rook_attacks(from, all_occ) & ~our_occ & mask; break;
@@ -815,28 +816,25 @@ void Board::updateZobrist(Move move) {
 	if (state_stack.back().ep_square != -1) hash ^= z.ep_file[state_stack.back().ep_square & 0x7];
 	if (ep_square != -1) hash ^= z.ep_file[ep_square & 0x7];
 
-	if (p == eKing) {
-		// Move the rook if castling
-		if (std::abs((int)move.to() - (int)move.from()) == 2) {
-			switch (move.to()) {
-			case g1:
-				hash ^= z.piece_at[(h1 * 12) + (eRook - 1) + (!us * 6)];
-				hash ^= z.piece_at[(f1 * 12) + (eRook - 1) + (!us * 6)];
-				break; // King-side castling for white
-			case c1:
-				hash ^= z.piece_at[(a1 * 12) + (eRook - 1) + (!us * 6)];
-				hash ^= z.piece_at[(d1 * 12) + (eRook - 1) + (!us * 6)];
-				break; // Queen-side castling for white
-			case g8:
-				hash ^= z.piece_at[(h8 * 12) + (eRook - 1) + (!us * 6)];
-				hash ^= z.piece_at[(f8 * 12) + (eRook - 1) + (!us * 6)];
-				break;// King-side castling for black
-			case c8:
-				hash ^= z.piece_at[(a8 * 12) + (eRook - 1) + (!us * 6)];
-				hash ^= z.piece_at[(d8 * 12) + (eRook - 1) + (!us * 6)];
-				break; // Queen-side castling for black
-			default: throw std::invalid_argument("Invalid castling move");
-			}
+	if (move.isCastle()) {
+		switch (move.to()) {
+		case g1:
+			hash ^= z.piece_at[(h1 * 12) + (eRook - 1) + (!us * 6)];
+			hash ^= z.piece_at[(f1 * 12) + (eRook - 1) + (!us * 6)];
+			break; // King-side castling for white
+		case c1:
+			hash ^= z.piece_at[(a1 * 12) + (eRook - 1) + (!us * 6)];
+			hash ^= z.piece_at[(d1 * 12) + (eRook - 1) + (!us * 6)];
+			break; // Queen-side castling for white
+		case g8:
+			hash ^= z.piece_at[(h8 * 12) + (eRook - 1) + (!us * 6)];
+			hash ^= z.piece_at[(f8 * 12) + (eRook - 1) + (!us * 6)];
+			break;// King-side castling for black
+		case c8:
+			hash ^= z.piece_at[(a8 * 12) + (eRook - 1) + (!us * 6)];
+			hash ^= z.piece_at[(d8 * 12) + (eRook - 1) + (!us * 6)];
+			break; // Queen-side castling for black
+		default: throw std::invalid_argument("Invalid castling move");
 		}
 	}
 }
@@ -1022,7 +1020,7 @@ int Board::evalUpdate()  {
 	out = ((24 - game_phase) * MG_SCORE(out)) / 24  + (game_phase * EG_SCORE(out)) / 24;
 	return out;
 }
-/*
+
 int Board::staticExchangeEvaluation(Move move, int threshold) {
 
 	int from, to, type, colour, balance, nextVictim;
@@ -1040,7 +1038,7 @@ int Board::staticExchangeEvaluation(Move move, int threshold) {
 
 	// Balance is the value of the move minus threshold. Function
 	// call takes care for Enpass, Promotion and Castling moves.
-	balance = moveEstimatedValue(board, move) - threshold;
+	balance = moveEstimatedValue(move) - threshold;
 
 	// Best case still fails to beat the threshold
 	if (balance < 0) return 0;
@@ -1057,9 +1055,9 @@ int Board::staticExchangeEvaluation(Move move, int threshold) {
 	rooks = boards[us][eRook] | boards[us][eBishop];
 
 	// Let occupied suppose that the move was actually made
-	occupied = (board->colours[WHITE] | board->colours[BLACK]);
+	occupied = getOccupancy();
 	occupied = (occupied ^ (1ull << from)) | (1ull << to);
-	if (type == ENPASS_MOVE) occupied ^= (1ull << board->epSquare);
+	if (move.isEnPassant()) occupied ^= (1ull << ep_square);
 
 	// Get all pieces which attack the target square. And with occupied
 	// so that we do not let the same piece attack twice
@@ -1071,24 +1069,24 @@ int Board::staticExchangeEvaluation(Move move, int threshold) {
 	while (1) {
 
 		// If we have no more attackers left we lose
-		myAttackers = attackers & board->colours[colour];
+		myAttackers = attackers & boards[colour][0];
 		if (myAttackers == 0ull) break;
 
 		// Find our weakest piece to attack with
-		for (nextVictim = PAWN; nextVictim <= QUEEN; nextVictim++)
-			if (myAttackers & board->pieces[nextVictim])
+		for (nextVictim = ePawn; nextVictim <= eQueen; nextVictim++)
+			if (myAttackers & boards[us][nextVictim])
 				break;
 
 		// Remove this attacker from the occupied
-		occupied ^= (1ull << getlsb(myAttackers & board->pieces[nextVictim]));
+		occupied ^= (1ull << BB::bitscan(myAttackers & boards[us][nextVictim]));
 
 		// A diagonal move may reveal bishop or queen attackers
-		if (nextVictim == PAWN || nextVictim == BISHOP || nextVictim == QUEEN)
-			attackers |= bishopAttacks(to, occupied) & bishops;
+		if (nextVictim == ePawn || nextVictim == eBishop || nextVictim == eQueen)
+			attackers |= BB::get_bishop_attacks(to, occupied) & bishops;
 
 		// A vertical or horizontal move may reveal rook or queen attackers
-		if (nextVictim == ROOK || nextVictim == QUEEN)
-			attackers |= rookAttacks(to, occupied) & rooks;
+		if (nextVictim == eRook || nextVictim == eQueen)
+			attackers |= BB::get_rook_attacks(to, occupied) & rooks;
 
 		// Make sure we did not add any already used attacks
 		attackers &= occupied;
@@ -1097,7 +1095,7 @@ int Board::staticExchangeEvaluation(Move move, int threshold) {
 		colour = !colour;
 
 		// Negamax the balance and add the value of the next victim
-		balance = -balance - 1 - SEEPieceValues[nextVictim];
+		balance = -balance - 1 - see_piece_vals[nextVictim];
 
 		// If the balance is non negative after giving away our piece then we win
 		if (balance >= 0) {
@@ -1105,7 +1103,7 @@ int Board::staticExchangeEvaluation(Move move, int threshold) {
 			// As a slide speed up for move legality checking, if our last attacking
 			// piece is a king, and our opponent still has attackers, then we've
 			// lost as the move we followed would be illegal
-			if (nextVictim == KING && (attackers & board->colours[colour]))
+			if (nextVictim == eKing && (attackers & boards[colour][0]))
 				colour = !colour;
 
 			break;
@@ -1113,6 +1111,26 @@ int Board::staticExchangeEvaluation(Move move, int threshold) {
 	}
 
 	// Side to move after the loop loses
-	return board->turn != colour;
+	return us != colour;
 }
-*/
+
+
+int Board::moveEstimatedValue(Move move) {
+
+	// Start with the value of the piece on the target square
+	int value = see_piece_vals[mailbox[move.to()]];
+
+	// Factor in the new piece's value and remove our promoted pawn
+	if (move.promotion())
+		value += see_piece_vals[move.promotion()] - see_piece_vals[ePawn];
+
+	// Target square is encoded as empty for enpass moves
+	else if (move.isEnPassant())
+		value = see_piece_vals[ePawn];
+
+	// We encode Castle moves as KxR, so the initial step is wrong
+	else if (move.isCastle())
+		value = 0;
+
+	return value;
+}
