@@ -107,9 +107,7 @@ private:
     
     std::array < std::array<u64, 7>, 2 > boards;
 
-    
-
-   static Zobrist z;
+	static Zobrist z;
     std::array<u8, 64> mailbox;
     int eval = 0;
     u64 hash = 0;
