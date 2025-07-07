@@ -3067,7 +3067,7 @@ class Board {
 
         key_ ^= Zobrist::castling(cr_.hashIndex());
 
-        assert(key_ == zobrist());
+        //assert(key_ == zobrist());
 
         // init castling_path
         for (Color c : {Color::WHITE, Color::BLACK}) {

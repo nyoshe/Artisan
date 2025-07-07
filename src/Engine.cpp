@@ -277,6 +277,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 		if (checkTime(false)) return best;
 		moves_searched++;
 		int score = 0;
+		int hist = history_table[b.us][move.from()][move.to()];
 
 		bool is_quiet = !(move.captured() || move.promotion());
 		if (is_quiet) {
@@ -284,7 +285,15 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 		} else {
 			ss->seen_noisies.emplace_back(move);
 		}
+		int see_margin[2];
+		see_margin[0] = -20 * depth_left * depth_left;
+		see_margin[1] = -64 * depth_left;
 		
+		if (depth_left <= 10
+			&& moves_searched > 3
+			&& !b.staticExchangeEvaluation(move, see_margin[is_quiet] - hist / 128)){
+			continue;
+		}
 
 		b.doMove(move);
 		ss->current_move = move;
@@ -292,6 +301,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 		bool move_is_check = b.isCheck();
 
 		if (is_quiet && !move_is_check && !is_pv && !is_root) {
+
 			//futility pruning, LMP
 			if (futility_prune) {
 				b.undoMove();
@@ -305,11 +315,12 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 			
 			//history pruning
 			
-			if (raised_alpha && moves_searched > 4 && depth_left < 4 && history_table[!b.us][move.from()][move.to()] < -1024 * depth_left) {
+			if (raised_alpha && moves_searched > 4 && depth_left < 4 && hist < -1024 * depth_left) {
 				b.undoMove();
 				break;
 			}
 		}
+		
 		
 
 		//search reductions
