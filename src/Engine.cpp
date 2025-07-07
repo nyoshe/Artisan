@@ -289,12 +289,14 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 		see_margin[0] = -20 * depth_left * depth_left;
 		see_margin[1] = -64 * depth_left;
 		
-		if (depth_left <= 10
-			&& moves_searched > 3
-			&& !b.staticExchangeEvaluation(move, see_margin[is_quiet] - hist / 128)){
+		if (best > -30000
+			&& depth_left <= 10
+			&& move_gen.stage > MoveStage::good_captures
+			&& !b.staticExchangeEvaluation(move, see_margin[is_quiet])){
+
 			continue;
 		}
-
+		
 		b.doMove(move);
 		ss->current_move = move;
 

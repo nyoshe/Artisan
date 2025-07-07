@@ -156,6 +156,7 @@ public:
     //get index of all attackers of a square
     [[nodiscard]] u64 getAttackers(int square) const;
     [[nodiscard]] u64 getAttackers(int square, bool side) const;
+    [[nodiscard]] u64 getAttackers(int square, bool side, u64 occ) const;
     [[nodiscard]] bool isCheck() const;
 
     [[nodiscard]] u64 getOccupancy() const {
