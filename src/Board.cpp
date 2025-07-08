@@ -411,6 +411,11 @@ Move Board::moveFromUCI(const std::string& uci) {
 }
 
 void Board::genPseudoLegalMoves(StaticVector<Move>& moves) {
+	genPseudoLegalCaptures(moves);
+	genPseudoLegalQuiets(moves);
+}
+
+void Board::genPseudoLegalQuiets(StaticVector<Move>& moves) {
 	const int them = us ^ 1;
 
 	u64 our_occ = boards[us][0];
@@ -427,8 +432,6 @@ void Board::genPseudoLegalMoves(StaticVector<Move>& moves) {
 	single_push &= ~all_occ;
 
 	u64 attacks = single_push;
-
-	genPseudoLegalCaptures(moves);
 
 	while (attacks) {
 		unsigned long to;
@@ -469,7 +472,7 @@ void Board::genPseudoLegalMoves(StaticVector<Move>& moves) {
 	if (!isCheck()) {
 		if (us == eWhite) {
 			if ((castle_flags & wShortCastleFlag) && !(u64(0b01100000) & all_occ)) moves.emplace_back({ e1, g1, eKing });
-			if ((castle_flags & wLongCastleFlag) && !(u64(0b00001110) & all_occ)) moves.emplace_back({e1, c1, eKing});
+			if ((castle_flags & wLongCastleFlag) && !(u64(0b00001110) & all_occ)) moves.emplace_back({ e1, c1, eKing });
 		}
 		else {
 			if ((castle_flags & bShortCastleFlag) && !((u64(0b01100000) << 56) & all_occ)) moves.emplace_back({
@@ -477,7 +480,7 @@ void Board::genPseudoLegalMoves(StaticVector<Move>& moves) {
 				});
 			if ((castle_flags & bLongCastleFlag) && !((u64(0b00001110) << 56) & all_occ)) moves.emplace_back({
 				e8, c8, eKing
-		});
+				});
 		}
 	}
 }

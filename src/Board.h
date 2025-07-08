@@ -145,6 +145,7 @@ public:
     // Returns a Move object corresponding to the given UCI string (e.g. "e2e4", "e7e8q").
     [[nodiscard]] Move moveFromUCI(const std::string& uci);
     void genPseudoLegalCaptures(StaticVector<Move>& moves);
+    void genPseudoLegalQuiets(StaticVector<Move>& moves);
     void serializeMoves(Piece piece, StaticVector<Move>& moves, bool quiet);
 
     void genPseudoLegalMoves(StaticVector<Move>& moves);

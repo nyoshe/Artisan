@@ -443,29 +443,21 @@ int Engine::quiesce(int alpha, int beta, bool cut_node, SearchStack* ss) {
 		if (entry.type == TType::FAIL_LOW && entry.eval <= alpha) return entry.eval;
 	}
 
-	b.genPseudoLegalCaptures(ss->moves);
-	b.filterToLegal(ss->moves);
-
 	//check evasions
-	//TODO: make this less cursed when I get around to proper staged movegen
 	if (b.isCheck()) {
-		ss->moves.clear();
 		b.genPseudoLegalMoves(ss->moves);
-		b.filterToLegal(ss->moves);
+	} else {
+		b.genPseudoLegalCaptures(ss->moves);
 	}
+	b.filterToLegal(ss->moves);
 
 	// Check for #M
 	if (ss->moves.empty()) {
-		ss->moves.clear();
-		b.genPseudoLegalMoves(ss->moves);
-		b.filterToLegal(ss->moves);
-		if (ss->moves.empty() && b.isCheck()) {
+		if (b.isCheck()) {
 			return -99999 + b.ply - start_ply;
-		}
-		if (ss->moves.empty()) {
+		} else {
 			return 0;
 		}
-		return stand_pat;
 	}
 
 	bool raised_alpha = false;
