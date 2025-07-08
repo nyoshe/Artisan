@@ -444,7 +444,6 @@ int Engine::quiesce(int alpha, int beta, bool cut_node, SearchStack* ss) {
 	}
 
 	//check evasions
-	//TODO: make this less cursed when I get around to proper staged movegen
 	if (b.isCheck()) {
 		b.genPseudoLegalMoves(ss->moves);
 	} else {
@@ -471,7 +470,6 @@ int Engine::quiesce(int alpha, int beta, bool cut_node, SearchStack* ss) {
 	MovePick move_gen;
 	Move move = move_gen.getNext(*this, b, ss);
 	while (move.raw()) {
-		if (move.captured() == eKing) return 99999 - (b.ply - start_ply);
 		if (checkTime(false)) return best;
 
 		b.doMove(move);
