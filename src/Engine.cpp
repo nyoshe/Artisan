@@ -444,6 +444,7 @@ int Engine::quiesce(int alpha, int beta, bool cut_node, SearchStack* ss) {
 	}
 
 	//check evasions
+	//TODO: make this less cursed when I get around to proper staged movegen
 	if (b.isCheck()) {
 		b.genPseudoLegalMoves(ss->moves);
 	} else {
@@ -453,11 +454,16 @@ int Engine::quiesce(int alpha, int beta, bool cut_node, SearchStack* ss) {
 
 	// Check for #M
 	if (ss->moves.empty()) {
-		if (b.isCheck()) {
+		ss->moves.clear();
+		b.genPseudoLegalMoves(ss->moves);
+		b.filterToLegal(ss->moves);
+		if (ss->moves.empty() && b.isCheck()) {
 			return -99999 + b.ply - start_ply;
-		} else {
+		}
+		if (ss->moves.empty()) {
 			return 0;
 		}
+		return stand_pat;
 	}
 
 	bool raised_alpha = false;
