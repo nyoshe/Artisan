@@ -96,4 +96,18 @@ public:
 	    // Set new eval bits
 	    data |= (eval_bits << 22);
     }
+	[[nodiscard]] int getEval() const {
+		// Extract the 10-bit evaluation score from bits 22-31
+		uint32_t eval_bits = (data >> 22) & 0x3FF;
+
+		// Convert from 10-bit unsigned representation back to signed int
+		// If the high bit (bit 9) is set, this is a negative number
+		if (eval_bits & 0x200) {
+			// For negative numbers, convert from two's complement
+			return static_cast<int>(eval_bits) - 1024;
+		}
+
+		// For positive numbers, just return as is
+		return static_cast<int>(eval_bits);
+	}
 };

@@ -273,7 +273,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 	int moves_searched = 0;
 	MovePick move_gen;
 	bool raised_alpha = false;
-	while (const Move move = move_gen.getNext(*this, b, ss)) {
+	while (const Move move = move_gen.getNext(*this, b, ss, 0)) {
 		if (checkTime(false)) return best;
 		moves_searched++;
 		int score = 0;
@@ -463,8 +463,7 @@ int Engine::quiesce(int alpha, int beta, bool cut_node, SearchStack* ss) {
 	bool raised_alpha = false;
 	Move best_move;
 	MovePick move_gen;
-	Move move = move_gen.getNext(*this, b, ss);
-	while (move.raw()) {
+	while (Move move = move_gen.getNext(*this, b, ss, alpha - stand_pat - 120)) {
 		if (move.captured() == eKing) return 99999 - (b.ply - start_ply);
 		if (checkTime(false)) return best;
 
@@ -485,7 +484,6 @@ int Engine::quiesce(int alpha, int beta, bool cut_node, SearchStack* ss) {
 			storeTTEntry(b.getHash(), score, TType::BETA_CUT, 0, best_move);
 			return score;
 		}
-		move = move_gen.getNext(*this, b, ss);
 	}
 	if (raised_alpha) {
 		storeTTEntry(b.getHash(), best, TType::EXACT, 0, best_move);

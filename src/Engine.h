@@ -153,10 +153,9 @@ enum class MoveStage {
 
 class MovePick {
 	int killer_slot = 0;
-
 public:
 	MoveStage stage = MoveStage::ttMove;
-	Move getNext(Engine& e, Board& b, SearchStack* ss) {
+	Move getNext(Engine& e, Board& b, SearchStack* ss, int threshold) {
 
 		if (ss->moves.empty()) {
 			return Move(0, 0);
@@ -195,7 +194,7 @@ public:
 			stage = MoveStage::good_captures;
 			[[fallthrough]];
 		case MoveStage::good_captures: {
-			int max = good_cap_cutoff;
+			int max = -100000;
 			int index = 0;
 			
 			for (int i = 0; i < ss->moves.size(); i++) {
@@ -204,19 +203,18 @@ public:
 					Move m = ss->moves[i];
 					int val = see_piece_vals[m.promotion()] + (m.captured() ? see_piece_vals[m.captured()] * 8 +
 						e.capture_history[b.us][m.piece()][m.captured()][m.to()] : 0);
-					if (val > max) {
+					if (val > max && b.staticExchangeEvaluation(ss->moves[i], threshold)) {
 						max = val;
 						index = i;
 					}
 				}
 
 			}
-			if (max != good_cap_cutoff) {
+			if (max != -100000) {
 				out = ss->moves[index];
 				ss->moves[index] = ss->moves.back();
 				ss->moves.pop_back();
 				return out;
-
 			}
 		}
 			stage = MoveStage::killer;
