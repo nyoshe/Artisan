@@ -446,6 +446,14 @@ int Engine::quiesce(int alpha, int beta, bool cut_node, SearchStack* ss) {
 	b.genPseudoLegalCaptures(ss->moves);
 	b.filterToLegal(ss->moves);
 
+	//check evasions
+	//TODO: make this less cursed when I get around to proper staged movegen
+	if (b.isCheck()) {
+		ss->moves.clear();
+		b.genPseudoLegalMoves(ss->moves);
+		b.filterToLegal(ss->moves);
+	}
+
 	// Check for #M
 	if (ss->moves.empty()) {
 		ss->moves.clear();
