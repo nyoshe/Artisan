@@ -587,7 +587,7 @@ void Board::filterToLegal(StaticVector<Move>& moves) {
 }
 
 bool Board::isLegal(Move move) {
-	
+	if (isRepetition(2)) return false;
 	if (move.isCastle()) {
 		if (getAttackers((move.to() + move.from()) / 2, us)) {
 			return false;
@@ -595,7 +595,7 @@ bool Board::isLegal(Move move) {
 	}
 
 	doMove(move);
-	if (half_move > 100 || isRepetition(2)) {
+	if (half_move > 100) {
 		undoMove();
 		return false;
 	}

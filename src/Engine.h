@@ -174,7 +174,6 @@ public:
 					e.hash_hits++;
 					*pos_best = ss->moves.back();
 					ss->moves.pop_back();
-
 					stage = MoveStage::good_captures;
 					break;
 				}
