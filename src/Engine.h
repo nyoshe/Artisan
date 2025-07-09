@@ -157,24 +157,26 @@ public:
 	MoveStage stage = MoveStage::ttMove;
 	Move getNext(Engine& e, Board& b, SearchStack* ss, int threshold) {
 
+
 		if (ss->moves.empty()) {
 			return Move(0, 0);
 		}
-		Move out;
+
+		Move out = Move(0, 0);
 		TTEntry entry;
 		switch (stage) {
 		case MoveStage::ttMove:
 			entry = e.probeTT(e.b.getHash());
 			if (entry && entry.type != TType::FAIL_LOW) {
 				auto pos_best = std::find(ss->moves.begin(), ss->moves.end(), entry.best_move);
-				if (pos_best != ss->moves.end()) {
+				if (pos_best != ss->moves.end() && b.isLegal(*pos_best)) {
 					out = *pos_best;
 					e.hash_hits++;
 					*pos_best = ss->moves.back();
 					ss->moves.pop_back();
 
 					stage = MoveStage::good_captures;
-					return out;
+					break;
 				}
 			}
 			/*
@@ -214,7 +216,7 @@ public:
 				out = ss->moves[index];
 				ss->moves[index] = ss->moves.back();
 				ss->moves.pop_back();
-				return out;
+				break;
 			}
 		}
 			stage = MoveStage::killer;
@@ -223,12 +225,14 @@ public:
 		case MoveStage::killer:
 			if ((b.ply - e.start_ply > 2) && killer_slot < 2 && (ss - 2)->killers[killer_slot]) {
 				Move killer = (ss - 2)->killers[killer_slot++];
+				
 				auto pos_best = std::find(ss->moves.begin(), ss->moves.end(), killer);
-				if (pos_best != ss->moves.end()) {
+				if (pos_best != ss->moves.end() && b.isLegal(*pos_best)) {
+
 					out = *pos_best;
 					*pos_best = ss->moves.back();
 					ss->moves.pop_back();
-					return out;
+					break;
 				}
 			}
 			stage = MoveStage::bad_captures;
@@ -255,7 +259,7 @@ public:
 				out = ss->moves[index];
 				ss->moves[index] = ss->moves.back();
 				ss->moves.pop_back();
-				return out;
+				break;
 
 			}
 			
@@ -277,10 +281,10 @@ public:
 			out = ss->moves[index];
 			ss->moves[index] = ss->moves.back();
 			ss->moves.pop_back();
-			return out;
 			break;
 			}
 		}
-		return Move();
+		return out;
+
 	}
 };

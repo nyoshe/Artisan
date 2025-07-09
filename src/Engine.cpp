@@ -260,21 +260,18 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 	Move best_move;
 
 	b.genPseudoLegalMoves(ss->moves);
-	b.filterToLegal(ss->moves);
+	if (is_root) b.filterToLegal(ss->moves);
+	//b.filterToLegal(ss->moves);
 
 	// Check for #M
-	if (ss->moves.empty() && ss->in_check) {
-		return -99999 + b.ply - start_ply;
-	}
-	if (ss->moves.empty()) {
-		return 0;
-	}
+	
 
 	int moves_searched = 0;
 	MovePick move_gen;
 	bool raised_alpha = false;
 	while (const Move move = move_gen.getNext(*this, b, ss, 0)) {
 		if (checkTime(false)) return best;
+		if (!b.isLegal(move)) continue;
 		moves_searched++;
 		int score = 0;
 
@@ -402,6 +399,13 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 		}
 		
 	}
+	if (moves_searched == 0 && ss->in_check) {
+		return -99999 + b.ply - start_ply;
+	}
+	if (moves_searched == 0) {
+		return 0;
+	}
+
 
 	if (raised_alpha) {
 		storeTTEntry(b.getHash(), best, TType::EXACT, depth_left, best_move);
