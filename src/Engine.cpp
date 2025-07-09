@@ -84,6 +84,7 @@ Move Engine::search(int depth) {
 
 	b.genPseudoLegalMoves(search_stack->moves);
 	b.filterToLegal(search_stack->moves);
+	max_depth = 1;
 
 	if (search_stack->moves.size() == 1) {
 		printPV(alphaBeta(-100000, 100000, max_depth, false, search_stack));
@@ -93,7 +94,7 @@ Move Engine::search(int depth) {
 	if (depth == -1) calcTime();
 	else max_time = -1;
 
-	max_depth = 1;
+	
 	int score = alphaBeta(-100000, 100000, max_depth, false, search_stack);
 
 	Move best_move = pv_table[0][0];
@@ -136,8 +137,9 @@ Move Engine::search(int depth) {
 					add_time = true;
 					continue;
 				}
-			} 
-			return best_move;
+			}
+			break;
+			//return best_move;
 		} else if ((std::clock() - start_time) > max_time / 2 && max_time != -1) {
 			if (pv_table[0][0]) {
 				best_move = pv_table[0][0];
@@ -155,6 +157,7 @@ Move Engine::search(int depth) {
 
 		printPV(score);
 	}
+
 
 	return best_move;
 }
