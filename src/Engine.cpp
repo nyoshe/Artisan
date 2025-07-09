@@ -455,16 +455,17 @@ int Engine::quiesce(int alpha, int beta, bool cut_node, SearchStack* ss) {
 
 	// Check for #M
 	if (ss->moves.empty()) {
-		//ss->moves.clear();
-		//b.genPseudoLegalMoves(ss->moves);
-		//b.filterToLegal(ss->moves);
+		ss->moves.clear();
+		b.genPseudoLegalMoves(ss->moves);
+		b.filterToLegal(ss->moves);
 		if (ss->moves.empty() && b.isCheck()) {
 			return -99999 + b.ply - start_ply;
 		}
 		if (ss->moves.empty()) {
+
 			return 0;
 		}
-		//return stand_pat;
+		return stand_pat;
 	}
 
 	bool raised_alpha = false;
