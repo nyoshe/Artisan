@@ -15,7 +15,7 @@ add_executable (Artisan "Artisan.cpp" "Artisan.h"
     "UCI.h" "UCI.cpp"
     "Misc.h"
     "Tuner.h"
-    "Tuner.cpp")
+    "Tuner.cpp" )
 
 set_target_properties(Artisan PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
