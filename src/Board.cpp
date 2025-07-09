@@ -575,12 +575,7 @@ void Board::serializeMoves(Piece piece, StaticVector<Move>& moves, bool quiet) {
 void Board::filterToLegal(StaticVector<Move>& moves) {
 	//could be made quicker, perhaps only checking pieces between king and attackers
 	int new_i = 0;
-	if (isRepetition(2)) {
-		moves.resize(0);
-		return;
-	}
 	for (unsigned int i = 0; i < moves.size();i++) {
-
 		if (isLegal(moves[i])) {
 			moves[new_i] = moves[i];
 			new_i++;
@@ -767,7 +762,7 @@ u64 Board::getHash() const {
 bool Board::isRepetition(int n) const {
 	if (state_stack.empty()) return false;
 	int counter = 0;
-	for (int i = 1; i <= std::min(static_cast<int>(state_stack.size()), static_cast<int>(half_move + 1)); i++) {
+	for (int i = 2; i <= std::min(static_cast<int>(state_stack.size()), static_cast<int>(half_move + 1)); i+=2) {
 		if (state_stack[state_stack.size() - i].hash == hash) {
 			counter++;
 		}

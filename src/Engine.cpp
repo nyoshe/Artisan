@@ -87,8 +87,9 @@ Move Engine::search(int depth) {
 	max_depth = 1;
 
 	if (search_stack->moves.size() == 1) {
+		Move best_move = search_stack->moves[0];
 		printPV(alphaBeta(-100000, 100000, max_depth, false, search_stack));
-		return search_stack->moves[0];
+		return best_move;
 	}
 
 	if (depth == -1) calcTime();
@@ -162,6 +163,7 @@ Move Engine::search(int depth) {
 		return best_move;
 	} else {
 		//this should really never happen and I need to look into it if it does
+		search_stack->moves.clear();
 		b.genPseudoLegalMoves(search_stack->moves);
 		b.filterToLegal(search_stack->moves);
 		return search_stack->moves[0];
@@ -269,8 +271,8 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 	Move best_move;
 
 	b.genPseudoLegalMoves(ss->moves);
-	if (is_root) b.filterToLegal(ss->moves);
-	//b.filterToLegal(ss->moves);
+	//if (is_root) b.filterToLegal(ss->moves);
+	b.filterToLegal(ss->moves);
 
 	// Check for #M
 	
@@ -280,7 +282,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 	bool raised_alpha = false;
 	while (const Move move = move_gen.getNext(*this, b, ss, 0)) {
 		if (checkTime(false)) return best;
-		if (!b.isLegal(move)) continue;
+		//if (!b.isLegal(move)) continue;
 		moves_searched++;
 		int score = 0;
 
