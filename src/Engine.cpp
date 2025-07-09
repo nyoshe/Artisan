@@ -158,8 +158,14 @@ Move Engine::search(int depth) {
 		printPV(score);
 	}
 
-
-	return best_move;
+	if (b.isLegal(best_move)) {
+		return best_move;
+	} else {
+		//this should really never happen and I need to look into it if it does
+		b.genPseudoLegalMoves(search_stack->moves);
+		b.filterToLegal(search_stack->moves);
+		return search_stack->moves[0];
+	}
 }
 
 void Engine::bench() {
