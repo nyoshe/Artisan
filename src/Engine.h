@@ -4,7 +4,7 @@
 #include <ctime>
 #include <algorithm>
 #include <unordered_map>
-
+#include <fstream>
 #include "Memory.h"
 #include "Misc.h"
 
@@ -156,135 +156,138 @@ class MovePick {
 public:
 	MoveStage stage = MoveStage::ttMove;
 	Move getNext(Engine& e, Board& b, SearchStack* ss, int threshold) {
+		Move out = Move(0, 0);
 
+		do {
 
 		if (ss->moves.empty()) {
 			return Move(0, 0);
 		}
 
-		Move out = Move(0, 0);
 		TTEntry entry;
-		switch (stage) {
-		case MoveStage::ttMove:
-			entry = e.probeTT(e.b.getHash());
-			if (entry && entry.type != TType::FAIL_LOW) {
-				auto pos_best = std::find(ss->moves.begin(), ss->moves.end(), entry.best_move);
-				if (pos_best != ss->moves.end() && b.isLegal(*pos_best)) {
-					out = *pos_best;
-					e.hash_hits++;
-					*pos_best = ss->moves.back();
-					ss->moves.pop_back();
-					stage = MoveStage::good_captures;
-					break;
-				}
-			}
-			/*
-			stage = MoveStage::promotion;
-			[[fallthrough]];
-		case MoveStage::promotion:
-			if (moves.end() != std::find_if(moves.begin(), moves.end(),
-				[](const auto& m) { return m.promotion(); })) {
-				auto promo = [](const auto& a, const auto& b) { return piece_vals[a.promotion()]; };
-				auto pos_best = std::ranges::max_element(moves.begin(), moves.end(), promo);
-				out = *pos_best;
-				*pos_best = moves.back();
-				moves.pop_back();
-				return out;
-			}
-			*/
-			stage = MoveStage::good_captures;
-			[[fallthrough]];
-		case MoveStage::good_captures: {
-			int max = -100000;
-			int index = 0;
-			
-			for (int i = 0; i < ss->moves.size(); i++) {
-				if (ss->moves[i].captured() || ss->moves[i].promotion()) {
-					//piece_vals[moves[i].promotion()] * 256 +
-					Move m = ss->moves[i];
-					int val = see_piece_vals[m.promotion()] + (m.captured() ? see_piece_vals[m.captured()] * 8 +
-						e.capture_history[b.us][m.piece()][m.captured()][m.to()] : 0);
-					if (val > max && b.staticExchangeEvaluation(ss->moves[i], threshold)) {
-						max = val;
-						index = i;
+		
+			switch (stage) {
+			case MoveStage::ttMove:
+				entry = e.probeTT(e.b.getHash());
+				if (entry && entry.type != TType::FAIL_LOW) {
+					auto pos_best = std::find(ss->moves.begin(), ss->moves.end(), entry.best_move);
+					if (pos_best != ss->moves.end() && b.isLegal(*pos_best)) {
+						out = *pos_best;
+						e.hash_hits++;
+						*pos_best = ss->moves.back();
+						ss->moves.pop_back();
+						stage = MoveStage::good_captures;
+						break;
 					}
 				}
-
-			}
-			if (max != -100000) {
-				out = ss->moves[index];
-				ss->moves[index] = ss->moves.back();
-				ss->moves.pop_back();
-				break;
-			}
-		}
-			stage = MoveStage::killer;
-			[[fallthrough]];
-
-		case MoveStage::killer:
-			if ((b.ply - e.start_ply > 2) && killer_slot < 2 && (ss - 2)->killers[killer_slot]) {
-				Move killer = (ss - 2)->killers[killer_slot++];
-				
-				auto pos_best = std::find(ss->moves.begin(), ss->moves.end(), killer);
-				if (pos_best != ss->moves.end() && b.isLegal(*pos_best)) {
-
+				/*
+				stage = MoveStage::promotion;
+				[[fallthrough]];
+			case MoveStage::promotion:
+				if (moves.end() != std::find_if(moves.begin(), moves.end(),
+					[](const auto& m) { return m.promotion(); })) {
+					auto promo = [](const auto& a, const auto& b) { return piece_vals[a.promotion()]; };
+					auto pos_best = std::ranges::max_element(moves.begin(), moves.end(), promo);
 					out = *pos_best;
-					*pos_best = ss->moves.back();
+					*pos_best = moves.back();
+					moves.pop_back();
+					return out;
+				}
+				*/
+				stage = MoveStage::good_captures;
+				[[fallthrough]];
+			case MoveStage::good_captures: {
+				int max = -100000;
+				int index = 0;
+			
+				for (int i = 0; i < ss->moves.size(); i++) {
+					if (ss->moves[i].captured() || ss->moves[i].promotion()) {
+						//piece_vals[moves[i].promotion()] * 256 +
+						Move m = ss->moves[i];
+						int val = see_piece_vals[m.promotion()] + (m.captured() ? see_piece_vals[m.captured()] * 8 +
+							e.capture_history[b.us][m.piece()][m.captured()][m.to()] : 0);
+						if (val > max && b.staticExchangeEvaluation(ss->moves[i], threshold)) {
+							max = val;
+							index = i;
+						}
+					}
+
+				}
+				if (max != -100000) {
+					out = ss->moves[index];
+					ss->moves[index] = ss->moves.back();
 					ss->moves.pop_back();
 					break;
 				}
 			}
-			stage = MoveStage::bad_captures;
-			[[fallthrough]];
+				stage = MoveStage::killer;
+				[[fallthrough]];
 
-		case MoveStage::bad_captures: {
-			int max = -100000;
-			int index = 0;
+			case MoveStage::killer:
+				if ((b.ply - e.start_ply > 2) && killer_slot < 2 && (ss - 2)->killers[killer_slot]) {
+					Move killer = (ss - 2)->killers[killer_slot++];
+					auto pos_best = std::find(ss->moves.begin(), ss->moves.end(), killer);
+					if (pos_best != ss->moves.end() && b.isLegal(*pos_best)) {
+						/*
+						if (!b.isLegal(*pos_best)) {
+							std::cout << "test";
+						}*/
+						out = *pos_best;
+						*pos_best = ss->moves.back();
+						ss->moves.pop_back();
+						break;
+					}
+				}
+				stage = MoveStage::bad_captures;
+				[[fallthrough]];
 
-			for (int i = 0; i < ss->moves.size(); i++) {
-				if (ss->moves[i].captured() || ss->moves[i].promotion()) {
-					//piece_vals[moves[i].promotion()] * 256 +
-					Move m = ss->moves[i];
-					int val = see_piece_vals[m.promotion()] + (m.captured() ? see_piece_vals[m.captured()] * 8 +
-						e.capture_history[b.us][m.piece()][m.captured()][m.to()] : 0);
+			case MoveStage::bad_captures: {
+				int max = -100000;
+				int index = 0;
+
+				for (int i = 0; i < ss->moves.size(); i++) {
+					if (ss->moves[i].captured() || ss->moves[i].promotion()) {
+						//piece_vals[moves[i].promotion()] * 256 +
+						Move m = ss->moves[i];
+						int val = see_piece_vals[m.promotion()] + (m.captured() ? see_piece_vals[m.captured()] * 8 +
+							e.capture_history[b.us][m.piece()][m.captured()][m.to()] : 0);
+						if (val > max) {
+							max = val;
+							index = i;
+						}
+					}
+
+				}
+				if (max != -100000) {
+					out = ss->moves[index];
+					ss->moves[index] = ss->moves.back();
+					ss->moves.pop_back();
+					break;
+
+				}
+			
+			}
+				stage = MoveStage::history;
+				[[fallthrough]];
+
+			case MoveStage::history: {
+				int max = -100000;
+				int index = 0;
+
+				for (int i = 0; i < ss->moves.size(); i++) {
+					int val = e.history_table[b.us][ss->moves[i].from()][ss->moves[i].to()];
 					if (val > max) {
 						max = val;
 						index = i;
 					}
 				}
-
-			}
-			if (max != -100000) {
 				out = ss->moves[index];
 				ss->moves[index] = ss->moves.back();
 				ss->moves.pop_back();
 				break;
-
-			}
-			
-		}
-			stage = MoveStage::history;
-			[[fallthrough]];
-
-		case MoveStage::history: {
-			int max = -100000;
-			int index = 0;
-
-			for (int i = 0; i < ss->moves.size(); i++) {
-				int val = e.history_table[b.us][ss->moves[i].from()][ss->moves[i].to()];
-				if (val > max) {
-					max = val;
-					index = i;
 				}
 			}
-			out = ss->moves[index];
-			ss->moves[index] = ss->moves.back();
-			ss->moves.pop_back();
-			break;
-			}
-		}
-
+		} while (!b.isLegal(out));
 		return out;
-
 	}
 };

@@ -1,4 +1,7 @@
 #include "Engine.h"
+
+
+
 namespace
 {
 	auto calc_lmr_base() {
@@ -82,14 +85,30 @@ Move Engine::search(int depth) {
 			         "-----------------------------------------------------------------\n";
 	}
 
+	search_stack->clear();
 	b.genPseudoLegalMoves(search_stack->moves);
 	b.filterToLegal(search_stack->moves);
 	max_depth = 1;
 
 	if (search_stack->moves.size() == 1) {
-		Move best_move = search_stack->moves[0];
 		printPV(alphaBeta(-100000, 100000, max_depth, false, search_stack));
-		return best_move;
+		search_stack->clear();
+		b.genPseudoLegalMoves(search_stack->moves);
+		b.filterToLegal(search_stack->moves);
+
+		return search_stack->moves[0];
+		/*
+		if (b.isLegal(search_stack->moves[0])) {
+			return search_stack->moves[0];
+		} else {
+			// Create and open a text file
+			std::ofstream MyFile("wtf_log.txt");
+			// Write to the file
+			MyFile << "wtf, turbo fucked, aaaaaaaaaaaaaaaaaaaaaaa";
+			// Close the file
+			MyFile.close();
+		}
+		*/
 	}
 
 	if (depth == -1) calcTime();
@@ -99,7 +118,7 @@ Move Engine::search(int depth) {
 	int score = alphaBeta(-100000, 100000, max_depth, false, search_stack);
 
 	Move best_move = pv_table[0][0];
-	if (!best_move) best_move = search_stack->moves.front();
+
 	bool add_time = false;
 
 	for (max_depth = 1; max_depth < ((depth == -1) ? MAX_PLY : depth); max_depth++) {
@@ -162,10 +181,39 @@ Move Engine::search(int depth) {
 	if (b.isLegal(best_move)) {
 		return best_move;
 	} else {
-		//this should really never happen and I need to look into it if it does
+		//this should really never happen 
 		search_stack->moves.clear();
 		b.genPseudoLegalMoves(search_stack->moves);
 		b.filterToLegal(search_stack->moves);
+		/*
+		if (!b.isLegal(search_stack->moves[0])) {
+
+			std::ofstream MyFile("wtf_log.txt");
+			MyFile << "wtf, turbo fucked really really boned it's so over, aaaaaaaaaaaaaaaaaaaaaaa\n";
+			MyFile << b.boardString();
+			chess::Board test_b;
+			MyFile << b.start_fen;
+			MyFile << " moves ";
+			if (!b.start_fen.empty()) {
+				test_b.setFen(b.start_fen);
+			}
+
+			for (auto m : b.state_stack) {
+				MyFile << m.move.toUci() << " ";
+			}
+
+			MyFile.close();
+			
+		
+		} else {
+			// Create and open a text file
+			std::ofstream MyFile("wtf_log.txt");
+			// Write to the file
+			MyFile << "wtf, turbo fucked v2 in end of engine, aaaaaaaaaaaaaaaaaaaaaaa";
+			// Close the file
+			MyFile.close();
+		}
+		*/
 		return search_stack->moves[0];
 	}
 }
@@ -271,8 +319,8 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 	Move best_move;
 
 	b.genPseudoLegalMoves(ss->moves);
-	//if (is_root) b.filterToLegal(ss->moves);
-	b.filterToLegal(ss->moves);
+	if (is_root) b.filterToLegal(ss->moves);
+	//b.filterToLegal(ss->moves);
 
 	// Check for #M
 	
@@ -281,8 +329,10 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 	MovePick move_gen;
 	bool raised_alpha = false;
 	while (const Move move = move_gen.getNext(*this, b, ss, 0)) {
-		if (checkTime(false)) return best;
 		//if (!b.isLegal(move)) continue;
+		if (checkTime(false)) return best;
+		
+
 		moves_searched++;
 		int score = 0;
 
@@ -559,7 +609,9 @@ void Engine::printPV(int score) {
 	for (auto m : b.state_stack) {
 		test_b.makeMove(chess::uci::uciToMove(test_b, m.move.toUci()));
 	}
-
+	chess::Movelist ml;
+	chess::movegen::legalmoves(ml, test_b);
+	std::string ssss = chess::uci::moveToUci(ml.front());
 	int i = 0;
 	for (auto& move : pv) {
 		i++;

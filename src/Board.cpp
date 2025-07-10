@@ -573,6 +573,10 @@ void Board::serializeMoves(Piece piece, StaticVector<Move>& moves, bool quiet) {
 }
 
 void Board::filterToLegal(StaticVector<Move>& moves) {
+	if (isRepetition(2)) {
+		moves.resize(0);
+		return;
+	}
 	//could be made quicker, perhaps only checking pieces between king and attackers
 	int new_i = 0;
 	for (unsigned int i = 0; i < moves.size();i++) {
@@ -585,6 +589,7 @@ void Board::filterToLegal(StaticVector<Move>& moves) {
 }
 
 bool Board::isLegal(Move move) {
+	if (!move) return false;
 	//if (isRepetition(2)) return false;
 	if (move.isCastle()) {
 		if (getAttackers((move.to() + move.from()) / 2, us)) {
@@ -593,7 +598,7 @@ bool Board::isLegal(Move move) {
 	}
 
 	doMove(move);
-	if (half_move > 100 || isRepetition(2)) {
+	if (half_move > 100) {
 		undoMove();
 		return false;
 	}
