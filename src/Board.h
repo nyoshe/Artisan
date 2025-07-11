@@ -47,7 +47,6 @@ struct BoardParams {
     int32_t mobility[5] = { S(12,-1), S(9, 0), S(8, 2), S(3, 5), S(-14, 9) };
     int32_t captures[5] = { S(12,41), S(15, 31), S(20, 35), S(-4, 26), S(-83, 102) };
     int32_t isolated_pawns = S(25, -50);
-
     //int32_t piece[6] = {S(1,1), S(10 ,20), S(10,20), S(10,20), S(10,20) , S(10,20)};
     //int32_t phase_values = S(100,100);
 };
@@ -89,12 +88,10 @@ struct Zobrist {
 
 inline Zobrist initZobristValues() {
     Zobrist z;
-
     for (auto& val : z.piece_at) val = rnd64();
     z.side = rnd64();
     for (auto& val : z.castle_rights) val = rnd64();
     for (auto& val : z.ep_file) val = rnd64();
-
     return z;
 }
 
@@ -191,18 +188,15 @@ public:
     void runSanityChecks() const;
     void printMoves() const;
     void reset();
-
+    
     [[nodiscard]] std::vector<Move> getLastMoves(int n_moves) const;
 
-    [[nodiscard]] u64 getHash() const;
-    bool isRepetition(int n) const;
-
-    [[nodiscard]] u64 calcHash() const;
-
     void updateZobrist(Move move);
+    [[nodiscard]] u64 calcHash() const;
+    [[nodiscard]] u64 getHash() const;
+    [[nodiscard]] bool isRepetition(int n) const;
 
-    int getMobility(bool side) ;
-
+    [[nodiscard]] int getMobility(bool side) ;
     int evalUpdate() ;
 };
 

@@ -180,20 +180,6 @@ public:
 						break;
 					}
 				}
-				/*
-				stage = MoveStage::promotion;
-				[[fallthrough]];
-			case MoveStage::promotion:
-				if (moves.end() != std::find_if(moves.begin(), moves.end(),
-					[](const auto& m) { return m.promotion(); })) {
-					auto promo = [](const auto& a, const auto& b) { return piece_vals[a.promotion()]; };
-					auto pos_best = std::ranges::max_element(moves.begin(), moves.end(), promo);
-					out = *pos_best;
-					*pos_best = moves.back();
-					moves.pop_back();
-					return out;
-				}
-				*/
 				stage = MoveStage::good_captures;
 				[[fallthrough]];
 			case MoveStage::good_captures: {
@@ -242,7 +228,7 @@ public:
 				[[fallthrough]];
 
 			case MoveStage::bad_captures: {
-				int max = -100000;
+				int max = INT_MIN;
 				int index = 0;
 
 				for (int i = 0; i < ss->moves.size(); i++) {
@@ -258,20 +244,18 @@ public:
 					}
 
 				}
-				if (max != -100000) {
+				if (max != INT_MIN) {
 					out = ss->moves[index];
 					ss->moves[index] = ss->moves.back();
 					ss->moves.pop_back();
 					break;
-
 				}
-			
 			}
 				stage = MoveStage::history;
 				[[fallthrough]];
 
 			case MoveStage::history: {
-				int max = -100000;
+				int max = INT_MIN;
 				int index = 0;
 
 				for (int i = 0; i < ss->moves.size(); i++) {

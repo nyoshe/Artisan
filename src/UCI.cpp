@@ -43,6 +43,7 @@ int UCI::loop() {
 				iss >> token;
 				iss >> token;
 				options.hash_size = std::stoi(token);
+				engine_ = Engine(options);
 			}
 		}
 		else if (token == "bench") {

@@ -97,18 +97,6 @@ Move Engine::search(int depth) {
 		b.filterToLegal(search_stack->moves);
 
 		return search_stack->moves[0];
-		/*
-		if (b.isLegal(search_stack->moves[0])) {
-			return search_stack->moves[0];
-		} else {
-			// Create and open a text file
-			std::ofstream MyFile("wtf_log.txt");
-			// Write to the file
-			MyFile << "wtf, turbo fucked, aaaaaaaaaaaaaaaaaaaaaaa";
-			// Close the file
-			MyFile.close();
-		}
-		*/
 	}
 
 	if (depth == -1) calcTime();
@@ -185,35 +173,6 @@ Move Engine::search(int depth) {
 		search_stack->moves.clear();
 		b.genPseudoLegalMoves(search_stack->moves);
 		b.filterToLegal(search_stack->moves);
-		/*
-		if (!b.isLegal(search_stack->moves[0])) {
-
-			std::ofstream MyFile("wtf_log.txt");
-			MyFile << "wtf, turbo fucked really really boned it's so over, aaaaaaaaaaaaaaaaaaaaaaa\n";
-			MyFile << b.boardString();
-			chess::Board test_b;
-			MyFile << b.start_fen;
-			MyFile << " moves ";
-			if (!b.start_fen.empty()) {
-				test_b.setFen(b.start_fen);
-			}
-
-			for (auto m : b.state_stack) {
-				MyFile << m.move.toUci() << " ";
-			}
-
-			MyFile.close();
-			
-		
-		} else {
-			// Create and open a text file
-			std::ofstream MyFile("wtf_log.txt");
-			// Write to the file
-			MyFile << "wtf, turbo fucked v2 in end of engine, aaaaaaaaaaaaaaaaaaaaaaa";
-			// Close the file
-			MyFile.close();
-		}
-		*/
 		return search_stack->moves[0];
 	}
 }
@@ -486,6 +445,7 @@ int Engine::quiesce(int alpha, int beta, bool cut_node, SearchStack* ss) {
 	if (b.isRepetition(1) || b.half_move >= 100) return 0;
 
 	ss->static_eval = b.getEval();
+	ss->in_check = b.isCheck();
 	int stand_pat = ss->static_eval;
 	int best = ss->static_eval;
 
@@ -508,29 +468,21 @@ int Engine::quiesce(int alpha, int beta, bool cut_node, SearchStack* ss) {
 		if (entry.type == TType::FAIL_LOW && entry.eval <= alpha) return entry.eval;
 	}
 
-	b.genPseudoLegalCaptures(ss->moves);
-	b.filterToLegal(ss->moves);
-
-	// Check for #M
-	if (ss->moves.empty()) {
-		ss->moves.clear();
+	if (ss->in_check) {
 		b.genPseudoLegalMoves(ss->moves);
-		b.filterToLegal(ss->moves);
-		if (ss->moves.empty() && b.isCheck()) {
-			return -99999 + b.ply - start_ply;
-		}
-		if (ss->moves.empty()) {
-			return 0;
-		}
-		return stand_pat;
+	} else {
+		b.genPseudoLegalCaptures(ss->moves);
+		//return stand_pat;
 	}
 
 	bool raised_alpha = false;
 	Move best_move;
 	MovePick move_gen;
+	int moves_searched = 0;
 	while (Move move = move_gen.getNext(*this, b, ss, alpha - stand_pat - 120)) {
 		if (move.captured() == eKing) return 99999 - (b.ply - start_ply);
 		if (checkTime(false)) return best;
+		moves_searched++;
 
 		b.doMove(move);
 		int score = -quiesce(-beta, -alpha, cut_node, ss + 1);
@@ -550,6 +502,17 @@ int Engine::quiesce(int alpha, int beta, bool cut_node, SearchStack* ss) {
 			return score;
 		}
 	}
+	if (moves_searched == 0 && ss->in_check) {
+		return -99999 + b.ply - start_ply;
+	} else if (moves_searched == 0 && !ss->in_check) {
+		ss->moves.clear();
+		b.genPseudoLegalMoves(ss->moves);
+		b.filterToLegal(ss->moves);
+		if (ss->moves.empty()) return 0;
+	} else if (moves_searched == 0) {
+		return stand_pat;
+	}
+
 	if (raised_alpha) {
 		storeTTEntry(b.getHash(), best, TType::EXACT, 0, best_move);
 	}

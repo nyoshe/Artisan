@@ -590,7 +590,6 @@ void Board::filterToLegal(StaticVector<Move>& moves) {
 
 bool Board::isLegal(Move move) {
 	if (!move) return false;
-	//if (isRepetition(2)) return false;
 	if (move.isCastle()) {
 		if (getAttackers((move.to() + move.from()) / 2, us)) {
 			return false;
@@ -609,20 +608,6 @@ bool Board::isLegal(Move move) {
 	undoMove();
 	return !is_check;
 }
-
-/*
-bool Board::isLegal(Move move) {
-	StaticVector<Move> vmove;
-	vmove.emplace_back(move);
-	if (move.raw() == 0) return false;
-
-	if (mailbox[move.from()] == move.piece() && mailbox[move.to()] == move.captured()) {
-		filterToLegal(vmove);
-		return !vmove.empty();
-	}
-	return false;
-}
-*/
 
 u64 Board::getAttackers(int square) const {
 	return getAttackers(square, us);
@@ -719,7 +704,7 @@ void Board::reset() {
 	boards[eBlack][eKing] = (u64(0b00010000) << 56);
 
 	// Set up piece_board
-	static const u8 initial_piece_board[64] = {
+	static constexpr u8 initial_piece_board[64] = {
 		eRook,   eKnight, eBishop, eQueen,  eKing,   eBishop, eKnight, eRook,
 		ePawn,   ePawn,   ePawn,   ePawn,   ePawn,   ePawn,   ePawn,   ePawn,
 		eNone,   eNone,   eNone,   eNone,   eNone,   eNone,   eNone,   eNone,
@@ -741,8 +726,6 @@ void Board::reset() {
 	castle_flags = 0b1111;
 	ep_square = -1;
 	state_stack.clear();
-
-	//legal_moves.reserve(256);
 	setOccupancy();
 	hash = calcHash();
 }
@@ -869,10 +852,13 @@ int Board::getMobility(bool side)  {
 				case eKing: targets = BB::king_attacks[from]; break;
 				default: break;
 			}
-			//mobility += BB::popcnt(targets & ~our_occ);
 			//extra points for captures
-			eval_c.mobility[p - 2] += side == eWhite ? BB::popcnt(targets & ~all_occ & ~b_pawn_defenders) : -BB::popcnt(targets & ~all_occ & ~w_pawn_defenders);
-			eval_c.captures[p - 2] += side == eWhite ? BB::popcnt(targets & boards[!side][0] & ~b_pawn_defenders) : -BB::popcnt(targets & boards[!side][0] & ~w_pawn_defenders);
+			eval_c.mobility[p - 2] += side == eWhite ?
+				BB::popcnt(targets & ~all_occ & ~b_pawn_defenders):
+				-BB::popcnt(targets & ~all_occ & ~w_pawn_defenders);
+			eval_c.captures[p - 2] += side == eWhite ?
+				BB::popcnt(targets & boards[!side][0] & ~b_pawn_defenders) :
+				-BB::popcnt(targets & boards[!side][0] & ~w_pawn_defenders);
 			mobility += BB::popcnt(targets & boards[!side][0] & (side == eWhite ? ~b_pawn_defenders : ~w_pawn_defenders));
 		}
 	}
@@ -1027,24 +1013,24 @@ int Board::evalUpdate()  {
 	return out;
 }
 
+//implementation largely copied from Ethereal
+//https://github.com/AndyGrant/Ethereal/blob/0e47e9b67f345c75eb965d9fb3e2493b6a11d09a/src/search.c#L929
 int Board::staticExchangeEvaluation(Move move, int threshold) {
 
-	int from, to, type, colour, balance, nextVictim;
 	uint64_t bishops, rooks, occupied, attackers, myAttackers;
 
 	// Unpack move information
-	from = move.from();
-	to = move.to();
-	type = move.piece();
+	int from = move.from();
+	int to = move.to();
 
 	// Next victim is moved piece or promotion type
-	nextVictim = !move.promotion()
+	int nextVictim = !move.promotion()
 		? mailbox[from]
 		: move.promotion();
 
 	// Balance is the value of the move minus threshold. Function
 	// call takes care for Enpass, Promotion and Castling moves.
-	balance = moveEstimatedValue(move) - threshold;
+	int balance = moveEstimatedValue(move) - threshold;
 
 	// Best case still fails to beat the threshold
 	if (balance < 0) return 0;
@@ -1067,12 +1053,10 @@ int Board::staticExchangeEvaluation(Move move, int threshold) {
 
 	// Get all pieces which attack the target square. And with occupied
 	// so that we do not let the same piece attack twice
-	//printBoard();
 	attackers = (getAttackers(to, eBlack, occupied) | getAttackers(to, eWhite, occupied)) & occupied;
-	//std::cout << BB::to_string(BB::set_bit[to]) << std::endl;
-	//std::cout << BB::to_string(attackers) << std::endl;
+
 	// Now our opponents turn to recapture
-	colour = !us;
+	int colour = !us;
 
 	while (1) {
 
