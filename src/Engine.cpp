@@ -354,11 +354,11 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 				R = lmr_base[depth_left][moves_searched];
 				//R += move_is_check && move.piece() == eKing;
 				//R += move_gen.stage == MoveStage::killer;
-				//R -= hist / 10000;
+				//R -= hist / 6000;
 				//R += tt_entry ? (tt_entry.best_move.captured() || tt_entry.best_move.promotion()) : 0;
 				R += cut_node;
-				R += !ss->improving;
 			}
+			R += !ss->improving;
 			R -= move_is_check;
 			R += !is_pv;
 			//R -= history_table[!b.us][move.from()][move.to()] / 8870;
