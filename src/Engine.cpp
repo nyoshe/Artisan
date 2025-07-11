@@ -468,11 +468,35 @@ int Engine::quiesce(int alpha, int beta, bool cut_node, SearchStack* ss) {
 		if (entry.type == TType::FAIL_LOW && entry.eval <= alpha) return entry.eval;
 	}
 
-	if (ss->in_check) {
-		b.genPseudoLegalMoves(ss->moves);
-	} else {
+	/*
+	if (!ss->in_check) {
 		b.genPseudoLegalCaptures(ss->moves);
-		//return stand_pat;
+	} else {
+		b.genPseudoLegalMoves(ss->moves);
+	}
+	b.filterToLegal(ss->moves);
+
+	// Check for #M
+	if (ss->moves.empty()) {
+		if (!ss->in_check) {
+			ss->moves.clear();
+			b.genPseudoLegalMoves(ss->moves);
+			b.filterToLegal(ss->moves);
+		}
+		
+		if (ss->moves.empty() && b.isCheck()) {
+			return -99999 + b.ply - start_ply;
+		}
+		if (ss->moves.empty()) {
+			return 0;
+		}
+		return stand_pat;
+	}
+	*/
+
+	b.genPseudoLegalCaptures(ss->moves);
+	if (ss->moves.empty()) {
+		return stand_pat;
 	}
 
 	bool raised_alpha = false;
@@ -502,15 +526,17 @@ int Engine::quiesce(int alpha, int beta, bool cut_node, SearchStack* ss) {
 			return score;
 		}
 	}
-	if (moves_searched == 0 && ss->in_check) {
-		return -99999 + b.ply - start_ply;
-	} else if (moves_searched == 0 && !ss->in_check) {
+
+	if (moves_searched == 0) {
 		ss->moves.clear();
 		b.genPseudoLegalMoves(ss->moves);
 		b.filterToLegal(ss->moves);
-		if (ss->moves.empty()) return 0;
-	} else if (moves_searched == 0) {
-		return stand_pat;
+		if (ss->in_check) {
+			return -99999 + b.ply - start_ply;
+		} else {
+			if (ss->moves.empty()) return 0;
+			//return stand_pat;
+		}
 	}
 
 	if (raised_alpha) {
