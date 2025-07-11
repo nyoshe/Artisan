@@ -280,10 +280,6 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 
 	b.genPseudoLegalMoves(ss->moves);
 	if (is_root) b.filterToLegal(ss->moves);
-	//b.filterToLegal(ss->moves);
-
-	// Check for #M
-	
 
 	int moves_searched = 0;
 	MovePick move_gen;
@@ -470,32 +466,6 @@ int Engine::quiesce(int alpha, int beta, bool cut_node, SearchStack* ss) {
 		if (entry.type == TType::BETA_CUT && entry.eval >= beta) return entry.eval;
 		if (entry.type == TType::FAIL_LOW && entry.eval <= alpha) return entry.eval;
 	}
-
-	/*
-	if (!ss->in_check) {
-		b.genPseudoLegalCaptures(ss->moves);
-	} else {
-		b.genPseudoLegalMoves(ss->moves);
-	}
-	b.filterToLegal(ss->moves);
-
-	// Check for #M
-	if (ss->moves.empty()) {
-		if (!ss->in_check) {
-			ss->moves.clear();
-			b.genPseudoLegalMoves(ss->moves);
-			b.filterToLegal(ss->moves);
-		}
-		
-		if (ss->moves.empty() && b.isCheck()) {
-			return -99999 + b.ply - start_ply;
-		}
-		if (ss->moves.empty()) {
-			return 0;
-		}
-		return stand_pat;
-	}
-	*/
 
 	b.genPseudoLegalCaptures(ss->moves);
 	if (ss->moves.empty()) {
