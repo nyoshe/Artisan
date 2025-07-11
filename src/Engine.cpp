@@ -250,8 +250,8 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 			if (tt_entry.type == TType::BETA_CUT && tt_entry.eval >= beta) return tt_entry.eval;
 			if (tt_entry.type == TType::FAIL_LOW && tt_entry.eval <= alpha) return tt_entry.eval;
 		}
-		
-		
+
+
 		//null move pruning, do not NMP in late game
 		if (depth_left >= 2 && ss->static_eval > beta && (ss - 1)->current_move != Move(0,0)) {
 			b.doMove(Move(0, 0));
@@ -510,6 +510,11 @@ int Engine::quiesce(int alpha, int beta, bool cut_node, SearchStack* ss) {
 		if (move.captured() == eKing) return 99999 - (b.ply - start_ply);
 		if (checkTime(false)) return best;
 		moves_searched++;
+		if (move_gen.stage > MoveStage::good_captures) {
+			//count remaining legal moves
+			while (move_gen.getNext(*this, b, ss, alpha - stand_pat - 120)) moves_searched++;
+			break;
+		}
 
 		b.doMove(move);
 		int score = -quiesce(-beta, -alpha, cut_node, ss + 1);
@@ -529,7 +534,6 @@ int Engine::quiesce(int alpha, int beta, bool cut_node, SearchStack* ss) {
 			return score;
 		}
 	}
-
 	if (moves_searched == 0) {
 		ss->moves.clear();
 		b.genPseudoLegalMoves(ss->moves);
