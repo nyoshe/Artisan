@@ -288,6 +288,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 	int moves_searched = 0;
 	MovePick move_gen;
 	bool raised_alpha = false;
+	bool only_noisy = false;
 	while (const Move move = move_gen.getNext(*this, b, ss, 0)) {
 		//if (!b.isLegal(move)) continue;
 		if (checkTime(false)) return best;
@@ -296,6 +297,8 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 		int score = 0;
 
 		bool is_quiet = !(move.captured() || move.promotion());
+		if (only_noisy && is_quiet) continue;
+
 		if (is_quiet) {
 			ss->seen_quiets.emplace_back(move);
 		} else {
@@ -314,7 +317,7 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 
 			continue;
 		}
-		
+
 		b.doMove(move);
 		ss->current_move = move;
 		int extension = 0;
@@ -328,14 +331,14 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 				b.undoMove();
 				continue;
 			}
-			
+
 			if (ss->seen_quiets.size() > (1.0 + (depth_left * depth_left)) && depth_left <= 4) {
 				b.undoMove();
 				continue;
 			}
 			
 			//history pruning
-			
+
 			if (raised_alpha && moves_searched > 4 && depth_left < 4 && hist < -1024 * depth_left) {
 				b.undoMove();
 				break;
