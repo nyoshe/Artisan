@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <unordered_map>
 #include <fstream>
+#include <climits>
 #include "Memory.h"
 #include "Misc.h"
 
