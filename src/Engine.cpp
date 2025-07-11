@@ -207,17 +207,18 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 	(ss + 1)->killers[1] = Move(0, 0);
 
 	nodes++;
+
+	if (search_ply >= MAX_PLY - 1) return b.getEval();
 	if (b.isRepetition(is_root ? 2 : 1) || b.half_move >= 100) {
 		return 0;
 	}
 
-	
 	if (checkTime(false)) return b.getEval();
 
 	ss->in_check = b.isCheck();
 	
 	if (depth_left <= 0 && ss->in_check) { depth_left = 1; }
-	if (search_ply >= MAX_PLY - 1) return b.getEval();
+	
 	if (depth_left <= 0) return quiesce(alpha, beta, is_pv, ss + 1);
 
 	bool futility_prune = false;
@@ -290,7 +291,6 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 	while (const Move move = move_gen.getNext(*this, b, ss, 0)) {
 		//if (!b.isLegal(move)) continue;
 		if (checkTime(false)) return best;
-		
 
 		moves_searched++;
 		int score = 0;
@@ -317,7 +317,8 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 		
 		b.doMove(move);
 		ss->current_move = move;
-
+		int extension = 0;
+		int new_depth = depth_left - 1 + extension;
 		bool move_is_check = b.isCheck();
 
 		if (is_quiet && !move_is_check && !is_pv && !is_root) {
@@ -367,15 +368,14 @@ int Engine::alphaBeta(int alpha, int beta, int depth_left, bool cut_node, Search
 			int lmr_depth = std::clamp(depth_left - R, 1, depth_left);
 			score = -alphaBeta(-alpha - 1, -alpha, lmr_depth, true, ss + 1);
 			if (score > alpha) {
-				
-				int new_depth = depth_left - 1;
+				int post_lmr_depth = new_depth;
 				//history_table[!b.us][move.from()][move.to()];
 				//new_depth += score > best + 50;
-				new_depth -= score < (best + 10 * depth_left);
-				new_depth = std::min(new_depth, depth_left);
+				post_lmr_depth -= score < (best + 10 * depth_left);
+				post_lmr_depth = std::min(post_lmr_depth, depth_left);
 				//research full depth if we fail high
 				
-				score = -alphaBeta(-alpha - 1, -alpha, new_depth,  !cut_node, ss + 1);
+				score = -alphaBeta(-alpha - 1, -alpha, post_lmr_depth,  !cut_node, ss + 1);
 			}
 		}
 
